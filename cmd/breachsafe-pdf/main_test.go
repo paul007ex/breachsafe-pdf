@@ -2,7 +2,12 @@
 
 package main
 
-import "testing"
+import (
+	"io"
+	"os"
+	"strings"
+	"testing"
+)
 
 func TestHelpCommandsAreSuccessful(t *testing.T) {
 	for _, args := range [][]string{
@@ -16,6 +21,36 @@ func TestHelpCommandsAreSuccessful(t *testing.T) {
 			t.Errorf("run(%q) = %d, want 0", args, code)
 		}
 	}
+}
+
+func TestHelpSubcommandsRenderTheirOwnUsage(t *testing.T) {
+	for _, test := range []struct {
+		args   []string
+		needle string
+	}{
+		{args: []string{"help", "profile"}, needle: "usage: breachsafe-pdf profile"},
+		{args: []string{"help", "render"}, needle: "usage: breachsafe-pdf render"},
+	} {
+		output, code := captureStdout(func() int { return run(test.args) })
+		if code != 0 {
+			t.Errorf("run(%q) = %d, want 0", test.args, code)
+		}
+		if !strings.Contains(output, test.needle) {
+			t.Errorf("run(%q) output %q does not contain %q", test.args, output, test.needle)
+		}
+	}
+}
+
+func captureStdout(fn func() int) (string, int) {
+	original := os.Stdout
+	reader, writer, _ := os.Pipe()
+	os.Stdout = writer
+	code := fn()
+	_ = writer.Close()
+	os.Stdout = original
+	output, _ := io.ReadAll(reader)
+	_ = reader.Close()
+	return string(output), code
 }
 
 func TestLoggerFormats(t *testing.T) {
@@ -32,5 +67,19 @@ func TestLoggerFormats(t *testing.T) {
 func TestUnknownProfileFailsClosed(t *testing.T) {
 	if code := run([]string{"profile", "inspect", "breachsafe/unknown"}); code == 0 {
 		t.Fatal("unknown profile accepted")
+	}
+}
+
+func TestRenderPreservesTypedInputExitCode(t *testing.T) {
+	code := run([]string{
+		"render", "--profile", "breachsafe/community",
+		"--request", "/tmp/breachsafe-pdf-test-missing-request.json",
+		"--cbom", "/tmp/breachsafe-pdf-test-missing-cbom.json",
+		"--scan-json", "/tmp/breachsafe-pdf-test-missing-scan.json",
+		"--pdf", "/tmp/breachsafe-pdf-test-output.pdf",
+		"--result", "/tmp/breachsafe-pdf-test-result.json",
+	})
+	if code != 2 {
+		t.Fatalf("render invalid input exit code = %d, want 2", code)
 	}
 }
