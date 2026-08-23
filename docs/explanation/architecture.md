@@ -4,6 +4,23 @@
 
 ## Dependency direction
 
+```mermaid
+flowchart TD
+    Q[QuReddy container] -->|scan JSON| A[admission.Admit]
+    Q -->|CycloneDX CBOM| A
+    R[Render request] --> A
+    A --> M[CommunitySingleScan]
+    M --> E[evidenceapp.Render]
+    E --> P[pdf.Renderer]
+    P --> F[go-pdf/fpdf API]
+    F --> B[PDF bytes]
+    E --> RR[RenderResult JSON]
+```
+
+The Mermaid diagram is a navigation aid. The plain-text path below is the
+authoritative dependency description and remains readable in terminals and source
+archives.
+
 ```text
 External producer containers
   QuReddy + OpenSSL
@@ -54,6 +71,18 @@ owns the sequence that must remain consistent for every caller:
 This makes the renderer reusable from another Go caller without duplicating the
 admission or output rules.
 
+### File ownership
+
+| File or package | Owns | Does not own |
+| --- | --- | --- |
+| `cmd/evidence-report/main.go` | Flags, signals, exit code, JSON stdout | Evidence semantics or PDF layout |
+| `internal/evidenceapp` | Workflow sequencing and paired output | Producer-specific parsing rules |
+| `internal/admission` | Input schemas, correlation, source projection | Fonts, pagination, network access |
+| `internal/evidence` | Typed model, bounds, canonicalization, digests | Wire-format acquisition |
+| `internal/pdf` | FPDF setup, sections, typography, pagination | QuReddy or CBOM parsing |
+| `internal/assets` | Embedded fonts, icons, visual provenance | Caller-supplied paths |
+| `internal/output` | No-clobber paired persistence | Report interpretation |
+
 ## Presentation layer
 
 `internal/pdf` receives only `evidence.CommunitySingleScan`. It does not know the
@@ -81,3 +110,14 @@ and CBOM commands separately creates separate scan IDs. The producer-native fix 
 tracked in [QuReddy issue #430](https://github.com/BreachSAFE/qureddy/issues/430).
 Until that ships, the orchestrator must serialize both formats from one saved
 `ScanResult` and reject mismatched pairs.
+
+## Extension points
+
+The current renderer is intentionally internal. A future public library API should
+expose a typed request and a typed document result, while retaining these invariants:
+
+1. Admission happens before presentation.
+2. The renderer receives a source-neutral model, never arbitrary template text.
+3. Inputs and outputs are bounded and digestable.
+4. A report and its RenderResult are written as one output pair.
+5. External tools are invoked by the caller, not by the PDF library.

@@ -15,6 +15,21 @@ workflow, and the evidence boundaries around generated reports.
 | Maintainer | [Architecture](explanation/architecture.md) | Layer boundaries and trust decisions |
 | Contributor | [Release gates](contributors/release-gates.md) | Tests, image checks, and release evidence |
 
+## Contents
+
+- [Product boundary](#product-boundary)
+- [Quickstart](quickstart.md)
+- [Architecture and data flow](explanation/architecture.md)
+- [Security model](explanation/security.md)
+- [First report](tutorials/first-report.md)
+- [Container pipeline](how-to/container-pipeline.md)
+- [Troubleshooting](how-to/troubleshooting.md)
+- [CLI reference](reference/cli.md)
+- [Go library and call reference](reference/library-api.md)
+- [Input and output contracts](reference/contracts.md)
+- [RenderResult reference](reference/render-result.md)
+- [Release gates](contributors/release-gates.md)
+
 ## Product boundary
 
 BreachSAFE PDF is a renderer and admission boundary. It does not collect endpoint
