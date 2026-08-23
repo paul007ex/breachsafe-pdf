@@ -17,4 +17,5 @@ type Profile interface {
 	InputAdapterID() string
 	View() string
 	Validate(context.Context, evidence.CommunitySingleScan, evidence.Limits) error
+	Build(context.Context, evidence.CommunitySingleScan, evidence.Limits) (Document, error)
 }

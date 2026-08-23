@@ -16,6 +16,7 @@ import (
 	"github.com/paul007ex/breachsafe-pdf/internal/assets"
 	"github.com/paul007ex/breachsafe-pdf/internal/evidence"
 	"github.com/paul007ex/breachsafe-pdf/internal/fault"
+	"github.com/paul007ex/breachsafe-pdf/internal/report"
 	"golang.org/x/image/font/gofont/gobold"
 	"golang.org/x/image/font/gofont/goregular"
 	"golang.org/x/image/font/sfnt"
@@ -48,11 +49,25 @@ func New(generatorVersion, generatorCommit string) *Renderer {
 func (renderer *Renderer) Ready() bool { return renderer != nil }
 
 func (renderer *Renderer) Render(ctx context.Context, model evidence.CommunitySingleScan) (evidence.Document, error) {
+	document, err := report.NewCommunityDocument(model)
+	if err != nil {
+		return evidence.Document{}, fault.Wrap(fault.CodeRenderFailed, "pdf.document", err)
+	}
+	return renderer.RenderDocument(ctx, document)
+}
+
+// RenderDocument is the profile-neutral writer boundary. The community
+// payload remains supported as the first compatibility document.
+func (renderer *Renderer) RenderDocument(ctx context.Context, document report.Document) (evidence.Document, error) {
 	if renderer == nil {
 		return evidence.Document{}, fault.New(fault.CodeInvalidInput, "pdf.render", "renderer", "renderer is required")
 	}
 	if err := ctx.Err(); err != nil {
 		return evidence.Document{}, fault.Wrap(fault.CodeCanceled, "pdf.render", err)
+	}
+	model, err := document.CommunityModel()
+	if err != nil {
+		return evidence.Document{}, fault.Wrap(fault.CodeInvalidInput, "pdf.document", err)
 	}
 	model = evidence.Canonicalize(model)
 	if err := evidence.Validate(ctx, model, evidence.DefaultLimits()); err != nil {

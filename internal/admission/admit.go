@@ -94,7 +94,7 @@ func Admit(ctx context.Context, requestBytes, cbomBytes, scanJSONBytes []byte, l
 		return Result{}, fault.New(fault.CodeCorrelationMismatch, "admission.correlate", "sources", correlation.Basis)
 	}
 
-	model, err := buildModel(request, scan, cbom, cbomProperties, correlation, cbomDigest, scanDigest, len(cbomBytes), len(scanJSONBytes))
+	model, err := buildModel(request, scan, cbom, correlation, cbomDigest, scanDigest, len(cbomBytes), len(scanJSONBytes))
 	if err != nil {
 		return Result{}, err
 	}
@@ -196,7 +196,7 @@ func toolVersion(cbom cycloneDXDocument, name string) string {
 	return ""
 }
 
-func buildModel(request Request, scan qureddyDocument, cbom cycloneDXDocument, cbomProperties map[string]string, correlation evidence.Correlation, cbomDigest, scanDigest string, cbomSize, scanSize int) (evidence.CommunitySingleScan, error) {
+func buildModel(request Request, scan qureddyDocument, cbom cycloneDXDocument, correlation evidence.Correlation, cbomDigest, scanDigest string, cbomSize, scanSize int) (evidence.CommunitySingleScan, error) {
 	tools := buildTools(scan, cbom)
 	artifacts := []evidence.Artifact{
 		{
@@ -290,7 +290,6 @@ func buildModel(request Request, scan qureddyDocument, cbom cycloneDXDocument, c
 		IntegrityStatement:  "SHA-256 digests identify the exact input bytes supplied to this report. They do not prove semantic correlation, completeness, authenticity, compliance, or freshness. The final PDF digest is written only to the adjacent result JSON after rendering.",
 		RenderOptions:       request.RenderOptions,
 	}
-	_ = cbomProperties
 	return model, nil
 }
 

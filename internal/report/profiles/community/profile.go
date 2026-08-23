@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/paul007ex/breachsafe-pdf/internal/evidence"
+	"github.com/paul007ex/breachsafe-pdf/internal/report"
 )
 
 const (
@@ -23,4 +24,11 @@ func (Profile) View() string           { return View }
 
 func (Profile) Validate(ctx context.Context, model evidence.CommunitySingleScan, limits evidence.Limits) error {
 	return evidence.Validate(ctx, model, limits)
+}
+
+func (Profile) Build(ctx context.Context, model evidence.CommunitySingleScan, limits evidence.Limits) (report.Document, error) {
+	if err := evidence.Validate(ctx, model, limits); err != nil {
+		return report.Document{}, err
+	}
+	return report.NewCommunityDocument(model)
 }
