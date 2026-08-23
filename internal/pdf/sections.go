@@ -347,7 +347,9 @@ func (layout *layout) renderFinding(index int, finding evidence.Finding) error {
 			if err := layout.newPage("Observed results / findings"); err != nil {
 				return err
 			}
-			layout.continuationTitle("Observed results / findings")
+			if err := layout.continuationTitle("Observed results / findings"); err != nil {
+				return err
+			}
 			available = layout.bottom - layout.pdf.GetY()
 		}
 		maximumLines := max(1, int((available-23)/4.0))
@@ -382,7 +384,9 @@ func (layout *layout) renderFinding(index int, finding evidence.Finding) error {
 			if err := layout.newPage("Observed results / findings"); err != nil {
 				return err
 			}
-			layout.continuationTitle("Observed results / findings")
+			if err := layout.continuationTitle("Observed results / findings"); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

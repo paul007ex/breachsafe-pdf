@@ -94,7 +94,10 @@ func Admit(ctx context.Context, requestBytes, cbomBytes, scanJSONBytes []byte, l
 		return Result{}, fault.New(fault.CodeCorrelationMismatch, "admission.correlate", "sources", correlation.Basis)
 	}
 
-	model := buildModel(request, scan, cbom, cbomProperties, correlation, cbomDigest, scanDigest, len(cbomBytes), len(scanJSONBytes))
+	model, err := buildModel(request, scan, cbom, cbomProperties, correlation, cbomDigest, scanDigest, len(cbomBytes), len(scanJSONBytes))
+	if err != nil {
+		return Result{}, err
+	}
 	model = evidence.Canonicalize(model)
 	if err := evidence.Validate(ctx, model, limits.Model); err != nil {
 		return Result{}, err
@@ -193,7 +196,7 @@ func toolVersion(cbom cycloneDXDocument, name string) string {
 	return ""
 }
 
-func buildModel(request Request, scan qureddyDocument, cbom cycloneDXDocument, cbomProperties map[string]string, correlation evidence.Correlation, cbomDigest, scanDigest string, cbomSize, scanSize int) evidence.CommunitySingleScan {
+func buildModel(request Request, scan qureddyDocument, cbom cycloneDXDocument, cbomProperties map[string]string, correlation evidence.Correlation, cbomDigest, scanDigest string, cbomSize, scanSize int) (evidence.CommunitySingleScan, error) {
 	tools := buildTools(scan, cbom)
 	artifacts := []evidence.Artifact{
 		{
@@ -234,7 +237,10 @@ func buildModel(request Request, scan qureddyDocument, cbom cycloneDXDocument, c
 
 	coverage := buildCoverage(scan)
 	findings := buildFindings(scan, cbom)
-	inventory := buildInventory(cbom)
+	inventory, err := buildInventory(cbom)
+	if err != nil {
+		return evidence.CommunitySingleScan{}, err
+	}
 	limitations := []evidence.Limitation{
 		{ID: "single-run-boundary", Severity: "info", Description: "This Community report covers one producer run and one primary subject; it is not a fleet or organization assessment.", SourceRefs: []string{"scan-json"}},
 		{ID: "not-certification", Severity: "info", Description: "This evidence-backed report is not a certification, compliance determination, or attestation.", SourceRefs: []string{"cbom", "scan-json"}},
@@ -285,7 +291,7 @@ func buildModel(request Request, scan qureddyDocument, cbom cycloneDXDocument, c
 		RenderOptions:       request.RenderOptions,
 	}
 	_ = cbomProperties
-	return model
+	return model, nil
 }
 
 func buildTools(scan qureddyDocument, cbom cycloneDXDocument) []evidence.Tool {
@@ -436,11 +442,14 @@ func cbomRulePointers(cbom cycloneDXDocument) map[string]string {
 	return result
 }
 
-func buildInventory(cbom cycloneDXDocument) evidence.InventoryCollection {
+func buildInventory(cbom cycloneDXDocument) (evidence.InventoryCollection, error) {
 	maximum := min(len(cbom.Components), maxDisplayedInventory)
 	items := make([]evidence.InventoryAsset, 0, maximum)
 	for index, component := range cbom.Components[:maximum] {
-		properties, _ := propertyMap(component.Properties, "component")
+		properties, err := propertyMap(component.Properties, "component")
+		if err != nil {
+			return evidence.InventoryCollection{}, err
+		}
 		asset := evidence.InventoryAsset{
 			ID: component.BomRef, Name: component.Name, AssetType: component.CryptoProperties.AssetType,
 			Observation: displayUnknown(properties["qureddy:observation"]), Readiness: displayUnknown(properties["qureddy:readiness"]),
@@ -465,7 +474,7 @@ func buildInventory(cbom cycloneDXDocument) evidence.InventoryCollection {
 		collection.SelectionRule = "source order, first 1000 rows; exact source retains all cryptographic assets"
 		collection.AuthoritativeArtifactRef = "cbom"
 	}
-	return collection
+	return collection, nil
 }
 
 func buildErrors(scan qureddyDocument) []evidence.ErrorRecord {

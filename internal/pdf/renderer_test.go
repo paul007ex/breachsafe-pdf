@@ -75,9 +75,9 @@ func TestFullReportIsDeterministicAndExtractable(t *testing.T) {
 }
 
 func TestLetterGrayscaleProfileRendersAsLetterAndGray(t *testing.T) {
-	pdftocairo, err := exec.LookPath("pdftocairo")
+	_, err := exec.LookPath("pdftocairo")
 	if err != nil {
-		t.Skip("pdftocairo is required for raster color verification")
+		t.Fatalf("pdftocairo is required for raster color verification: %v", err)
 	}
 	model := admittedModel(t)
 	model.RenderOptions.PageSize = evidence.PageLetter
@@ -92,7 +92,8 @@ func TestLetterGrayscaleProfileRendersAsLetterAndGray(t *testing.T) {
 		t.Fatalf("pdfinfo does not report Letter output:\n%s", info)
 	}
 	prefix := filepath.Join(t.TempDir(), "page")
-	output, err := exec.Command(pdftocairo, "-f", "1", "-l", "1", "-singlefile", "-png", "-r", "72", pdfPath, prefix).CombinedOutput()
+	// #nosec G204 -- executable is a fixed test dependency; paths are t.TempDir().
+	output, err := exec.Command("pdftocairo", "-f", "1", "-l", "1", "-singlefile", "-png", "-r", "72", pdfPath, prefix).CombinedOutput()
 	if err != nil {
 		t.Fatalf("pdftocairo: %v: %s", err, output)
 	}
@@ -302,11 +303,12 @@ func writePDF(t *testing.T, data []byte) string {
 
 func popplerText(t *testing.T, path string) string {
 	t.Helper()
-	tool, err := exec.LookPath("pdftotext")
+	_, err := exec.LookPath("pdftotext")
 	if err != nil {
-		t.Skip("pdftotext is required for extraction acceptance tests")
+		t.Fatalf("pdftotext is required for extraction acceptance tests: %v", err)
 	}
-	output, err := exec.Command(tool, "-layout", path, "-").CombinedOutput()
+	// #nosec G204 -- executable is a fixed test dependency; path is t.TempDir().
+	output, err := exec.Command("pdftotext", "-layout", path, "-").CombinedOutput()
 	if err != nil {
 		t.Fatalf("pdftotext: %v: %s", err, output)
 	}
@@ -315,11 +317,12 @@ func popplerText(t *testing.T, path string) string {
 
 func pdfInfo(t *testing.T, path string) string {
 	t.Helper()
-	tool, err := exec.LookPath("pdfinfo")
+	_, err := exec.LookPath("pdfinfo")
 	if err != nil {
-		t.Skip("pdfinfo is required for structure acceptance tests")
+		t.Fatalf("pdfinfo is required for structure acceptance tests: %v", err)
 	}
-	output, err := exec.Command(tool, path).CombinedOutput()
+	// #nosec G204 -- executable is a fixed test dependency; path is t.TempDir().
+	output, err := exec.Command("pdfinfo", path).CombinedOutput()
 	if err != nil {
 		t.Fatalf("pdfinfo: %v: %s", err, output)
 	}

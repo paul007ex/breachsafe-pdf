@@ -19,7 +19,7 @@ jobs:
   go:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/paul007ex/breachsafe-golden-go:1.26.6
+      image: ghcr.io/paul007ex/breachsafe-golden-go:v0.1.0
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -32,7 +32,10 @@ jobs:
       - name: Vet
         run: go vet ./...
       - name: Test
-        run: go test ./...
+        run: |
+          set -o pipefail
+          go test -json ./... | tee /tmp/go-test.json
+          test "$(jq -s '[.[] | select(.Action == "skip" and .Test != null)] | length' /tmp/go-test.json)" -eq 0
       - name: Race test
         run: go test -race ./...
       - name: Module verification

@@ -18,5 +18,10 @@ linters:
       check-blank: true
     govet:
       enable-all: true
+      disable:
+        # These are JSON wire-model and layout structs. Field reordering would
+        # obscure schema order for marginal heap savings and does not change
+        # serialized output; memory limits are enforced at admission instead.
+        - fieldalignment
   exclusions:
     generated: lax

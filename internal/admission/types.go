@@ -8,6 +8,7 @@ import (
 	"github.com/paul007ex/breachsafe-pdf/internal/evidence"
 )
 
+// RequestSchemaVersion identifies the accepted render-request contract.
 const RequestSchemaVersion = "breachsafe.report.request.community-single-scan/v1alpha1"
 
 type Request struct {

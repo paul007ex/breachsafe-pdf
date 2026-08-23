@@ -15,7 +15,7 @@ COPY internal ./internal
 
 RUN go build \
     -trimpath \
-    -ldflags="-s -w -buildid= -X main.generatorVersion=0.1.0-dev" \
+    -ldflags="-s -w -buildid= -X main.generatorVersion=0.1.0" \
     -o /out/breachsafe-report \
     ./cmd/evidence-report
 
@@ -23,7 +23,7 @@ FROM scratch
 
 LABEL org.opencontainers.image.title="BreachSAFE PDF report compiler" \
       org.opencontainers.image.description="Pure-Go BreachSAFE PDF report compiler" \
-      org.opencontainers.image.version="0.1.0-dev" \
+      org.opencontainers.image.version="0.1.0" \
       org.opencontainers.image.licenses="PolyForm-Noncommercial-1.0.0"
 
 WORKDIR /work

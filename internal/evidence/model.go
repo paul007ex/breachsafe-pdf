@@ -22,14 +22,17 @@ import (
 )
 
 const (
+	// SchemaVersion identifies the Community report model contract.
 	SchemaVersion       = "breachsafe.report.community-single-scan/v1alpha1"
 	InputContract       = "breachsafe.report.input.qureddy/v1alpha1"
 	RenderResultVersion = "breachsafe.report.render-result/v1alpha1"
 )
 
+// RunStatus describes the producer run lifecycle state.
 type RunStatus string
 
 const (
+	// RunCompleted indicates a completed producer run.
 	RunCompleted      RunStatus = "completed"
 	RunCompletedEmpty RunStatus = "completed_empty"
 	RunPartial        RunStatus = "partial"
@@ -39,18 +42,22 @@ const (
 	RunUnknown        RunStatus = "unknown"
 )
 
+// CoverageStatus describes how much requested evidence was assessed.
 type CoverageStatus string
 
 const (
+	// CoverageComplete indicates all requested evidence was assessed.
 	CoverageComplete    CoverageStatus = "complete"
 	CoveragePartial     CoverageStatus = "partial"
 	CoverageUnavailable CoverageStatus = "unavailable"
 	CoverageUnknown     CoverageStatus = "unknown"
 )
 
+// Authority identifies the provenance strength of a report value.
 type Authority string
 
 const (
+	// AuthorityObserved identifies a directly observed value.
 	AuthorityObserved     Authority = "observed"
 	AuthorityToolAsserted Authority = "tool_asserted"
 	AuthorityImported     Authority = "imported"
@@ -59,9 +66,11 @@ const (
 	AuthorityUnknown      Authority = "unknown"
 )
 
+// ValidationStatus describes validation of an input or artifact.
 type ValidationStatus string
 
 const (
+	// ValidationValid indicates successful validation.
 	ValidationValid       ValidationStatus = "valid"
 	ValidationInvalid     ValidationStatus = "invalid"
 	ValidationUnsupported ValidationStatus = "unsupported"
@@ -69,20 +78,25 @@ const (
 	ValidationQuarantined ValidationStatus = "quarantined"
 )
 
+// PageSize selects the PDF page geometry.
 type PageSize string
 
 const (
+	// PageA4 selects ISO A4 paper.
 	PageA4     PageSize = "a4"
 	PageLetter PageSize = "letter"
 )
 
+// ColorMode selects color rendering behavior.
 type ColorMode string
 
 const (
+	// ColorFull selects the full-color palette.
 	ColorFull      ColorMode = "color"
 	ColorGrayscale ColorMode = "grayscale"
 )
 
+// Identity identifies a generated report.
 type Identity struct {
 	ReportID                string    `json:"report_id"`
 	Name                    string    `json:"name"`
@@ -92,6 +106,7 @@ type Identity struct {
 	Classification          string    `json:"classification"`
 }
 
+// Run records producer execution timing and status.
 type Run struct {
 	ID                   string    `json:"id"`
 	CorrelationID        string    `json:"correlation_id,omitempty"`
@@ -102,6 +117,7 @@ type Run struct {
 	Attempt              int       `json:"attempt"`
 }
 
+// Subject identifies the scanned target.
 type Subject struct {
 	ID               string   `json:"id"`
 	Kind             string   `json:"kind"`
@@ -110,6 +126,7 @@ type Subject struct {
 	SourceRefs       []string `json:"source_refs"`
 }
 
+// Tool records a producer or supporting tool.
 type Tool struct {
 	ID               string   `json:"id"`
 	Name             string   `json:"name"`
@@ -122,11 +139,13 @@ type Tool struct {
 	Limitations      []string `json:"limitations,omitempty"`
 }
 
+// Digest records a content digest and algorithm.
 type Digest struct {
 	Algorithm string `json:"algorithm"`
 	Value     string `json:"value"`
 }
 
+// ValidationResult records an artifact validation outcome.
 type ValidationResult struct {
 	Validator string           `json:"validator"`
 	Version   string           `json:"version"`
@@ -134,6 +153,7 @@ type ValidationResult struct {
 	Detail    string           `json:"detail,omitempty"`
 }
 
+// Artifact describes an exact evidence input or output.
 type Artifact struct {
 	ID                    string             `json:"id"`
 	Role                  string             `json:"role"`
@@ -149,6 +169,7 @@ type Artifact struct {
 	Relationship          string             `json:"relationship"`
 }
 
+// Coverage records evidence collection accounting.
 type Coverage struct {
 	Status      CoverageStatus `json:"status"`
 	Requested   int            `json:"requested"`
@@ -160,6 +181,7 @@ type Coverage struct {
 	Derivation  string         `json:"derivation,omitempty"`
 }
 
+// PostureAxis records one bounded readiness dimension.
 type PostureAxis struct {
 	ID         string    `json:"id"`
 	Label      string    `json:"label"`
@@ -172,12 +194,14 @@ type PostureAxis struct {
 	Derivation string    `json:"derivation,omitempty"`
 }
 
+// EvidenceRef points to supporting bytes in an admitted artifact.
 type EvidenceRef struct {
 	ArtifactRef string `json:"artifact_ref"`
 	Pointer     string `json:"pointer"`
 	Description string `json:"description"`
 }
 
+// Finding records one producer observation projected into the report.
 type Finding struct {
 	ID           string        `json:"id"`
 	Title        string        `json:"title"`
@@ -196,6 +220,7 @@ type Finding struct {
 	Algorithm    string        `json:"algorithm,omitempty"`
 }
 
+// InventoryAsset records one cryptographic inventory item.
 type InventoryAsset struct {
 	ID               string        `json:"id"`
 	Name             string        `json:"name"`
@@ -215,6 +240,7 @@ type InventoryAsset struct {
 	EvidenceRefs     []EvidenceRef `json:"evidence_refs"`
 }
 
+// FindingCollection records displayed and total finding counts.
 type FindingCollection struct {
 	TotalCount               int       `json:"total_count"`
 	Items                    []Finding `json:"items"`
@@ -223,6 +249,7 @@ type FindingCollection struct {
 	AuthoritativeArtifactRef string    `json:"authoritative_artifact_ref,omitempty"`
 }
 
+// InventoryCollection records displayed and total inventory counts.
 type InventoryCollection struct {
 	TotalCount               int              `json:"total_count"`
 	Items                    []InventoryAsset `json:"items"`
@@ -231,6 +258,7 @@ type InventoryCollection struct {
 	AuthoritativeArtifactRef string           `json:"authoritative_artifact_ref,omitempty"`
 }
 
+// ErrorRecord records a bounded processing error.
 type ErrorRecord struct {
 	ID           string   `json:"id"`
 	Stage        string   `json:"stage"`
@@ -241,6 +269,7 @@ type ErrorRecord struct {
 	EvidenceRefs []string `json:"evidence_refs,omitempty"`
 }
 
+// Limitation records a boundary or incompleteness warning.
 type Limitation struct {
 	ID          string   `json:"id"`
 	Severity    string   `json:"severity"`
@@ -248,12 +277,14 @@ type Limitation struct {
 	SourceRefs  []string `json:"source_refs"`
 }
 
+// Correlation records the relationship between exact source artifacts.
 type Correlation struct {
 	State      string   `json:"state"`
 	Basis      string   `json:"basis"`
 	SourceRefs []string `json:"source_refs"`
 }
 
+// RenderOptions controls deterministic PDF presentation.
 type RenderOptions struct {
 	PageSize             PageSize  `json:"page_size"`
 	Timezone             string    `json:"timezone"`
@@ -261,6 +292,7 @@ type RenderOptions struct {
 	AccessibilityProfile string    `json:"accessibility_profile"`
 }
 
+// CommunitySingleScan is the canonical source-neutral report model.
 type CommunitySingleScan struct {
 	SchemaVersion       string              `json:"schema_version"`
 	Identity            Identity            `json:"identity"`
@@ -280,6 +312,7 @@ type CommunitySingleScan struct {
 	RenderOptions       RenderOptions       `json:"render_options"`
 }
 
+// Limits bounds admission and rendering work.
 type Limits struct {
 	MaxTools           int
 	MaxArtifacts       int
@@ -294,6 +327,7 @@ type Limits struct {
 	MaxTotalTextBytes  int
 }
 
+// DefaultLimits returns the conservative report limits.
 func DefaultLimits() Limits {
 	return Limits{
 		MaxTools:           64,
@@ -310,6 +344,7 @@ func DefaultLimits() Limits {
 	}
 }
 
+// Document is a rendered PDF and its capability metadata.
 type Document struct {
 	Bytes             []byte
 	MediaType         string
@@ -323,12 +358,14 @@ type Document struct {
 	Capabilities      []CapabilityResult
 }
 
+// CapabilityResult records one renderer capability outcome.
 type CapabilityResult struct {
 	Name   string `json:"name"`
 	Status string `json:"status"`
 	Detail string `json:"detail,omitempty"`
 }
 
+// Renderer renders an admitted Community report model.
 type Renderer interface {
 	// Ready lets implementations reject a typed-nil or otherwise unusable
 	// receiver without reflection at the orchestration boundary.
@@ -336,6 +373,7 @@ type Renderer interface {
 	Render(context.Context, CommunitySingleScan) (Document, error)
 }
 
+// RenderResult records exact output and provenance digests.
 type RenderResult struct {
 	SchemaVersion          string             `json:"schema_version"`
 	ReportID               string             `json:"report_id"`
@@ -356,6 +394,7 @@ type RenderResult struct {
 	Warnings               []string           `json:"warnings"`
 }
 
+// PDFDescriptor describes the generated PDF bytes.
 type PDFDescriptor struct {
 	Path      string `json:"path"`
 	MediaType string `json:"media_type"`
@@ -364,17 +403,20 @@ type PDFDescriptor struct {
 	Pages     int    `json:"pages"`
 }
 
+// BuildIdentity identifies a generator or renderer build.
 type BuildIdentity struct {
 	Name    string `json:"name"`
 	Version string `json:"version"`
 	Commit  string `json:"commit,omitempty"`
 }
 
+// BundleIdentity identifies an embedded asset bundle.
 type BundleIdentity struct {
 	Name   string `json:"name"`
 	SHA256 string `json:"sha256"`
 }
 
+// Canonicalize returns a deterministic, caller-owned model copy.
 func Canonicalize(in CommunitySingleScan) CommunitySingleScan {
 	out := in
 	out.Tools = slices.Clone(in.Tools)
@@ -406,6 +448,7 @@ func Canonicalize(in CommunitySingleScan) CommunitySingleScan {
 	return out
 }
 
+// ModelDigest returns the digest of the canonical report model.
 func ModelDigest(in CommunitySingleScan) (string, error) {
 	data, err := json.Marshal(Canonicalize(in))
 	if err != nil {
@@ -414,6 +457,7 @@ func ModelDigest(in CommunitySingleScan) (string, error) {
 	return DigestBytes(data), nil
 }
 
+// RenderRequestDigest returns the digest of model and render options.
 func RenderRequestDigest(in CommunitySingleScan) (string, error) {
 	modelDigest, err := ModelDigest(in)
 	if err != nil {
@@ -432,11 +476,13 @@ func RenderRequestDigest(in CommunitySingleScan) (string, error) {
 	return DigestBytes(data), nil
 }
 
+// DigestBytes returns the lowercase SHA-256 digest of data.
 func DigestBytes(data []byte) string {
 	sum := sha256.Sum256(data)
 	return hex.EncodeToString(sum[:])
 }
 
+// Validate checks the closed report contract and all configured bounds.
 func Validate(ctx context.Context, model CommunitySingleScan, limits Limits) error {
 	if err := ctx.Err(); err != nil {
 		return fault.Wrap(fault.CodeCanceled, "evidence.validate", err)

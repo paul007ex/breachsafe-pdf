@@ -20,6 +20,7 @@ concurrency:
 
 env:
   IMAGE: ghcr.io/paul007ex/breachsafe-pdf
+  VERSION: v0.1.0
 
 permissions:
   contents: read
@@ -53,6 +54,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
+            ${{ env.IMAGE }}:${{ env.VERSION }}
+            ${{ env.IMAGE }}:v0.1
             ${{ env.IMAGE }}:${{ github.sha }}
             ${{ env.IMAGE }}:latest
           provenance: true

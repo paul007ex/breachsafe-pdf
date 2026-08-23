@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 set -eu
 
-image="${BREACHSAFE_GOLDEN_GO_IMAGE:-ghcr.io/paul007ex/breachsafe-golden-go:1.26.6}"
+image="${BREACHSAFE_GOLDEN_GO_IMAGE:-ghcr.io/paul007ex/breachsafe-golden-go:v0.1.0}"
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 
 exec docker run --rm \
@@ -13,7 +13,8 @@ exec docker run --rm \
 set -eu
 test -z "$(gofmt -l .)"
 go vet ./...
-go test ./...
+go test -json ./... | tee /tmp/breachsafe-go-test.json
+test "$(jq -s '[.[] | select(.Action == "skip" and .Test != null)] | length' /tmp/breachsafe-go-test.json)" -eq 0
 go test -race ./...
 go mod verify
 staticcheck ./...

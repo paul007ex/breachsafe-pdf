@@ -84,8 +84,8 @@ func Render(ctx context.Context, admitted admission.Result, pdfPath, resultPath 
 	if err != nil {
 		return evidence.RenderResult{}, err
 	}
-	if err := ctx.Err(); err != nil {
-		return evidence.RenderResult{}, fault.Wrap(fault.CodeCanceled, "evidenceapp.render", err)
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return evidence.RenderResult{}, fault.Wrap(fault.CodeCanceled, "evidenceapp.render", ctxErr)
 	}
 	if len(document.Bytes) == 0 || len(document.Bytes) > maxPDFBytes || document.Pages < 1 || document.Pages > 500 || document.MediaType != "application/pdf" {
 		return evidence.RenderResult{}, fault.New(fault.CodeRenderFailed, "evidenceapp.render", "document", "renderer returned an invalid or out-of-bounds PDF descriptor")
@@ -114,7 +114,7 @@ func Render(ctx context.Context, admitted admission.Result, pdfPath, resultPath 
 	return result, nil
 }
 
-func readRegularFile(ctx context.Context, path string, maximum int, field string) ([]byte, error) {
+func readRegularFile(ctx context.Context, path string, maximum int, field string) (data []byte, retErr error) {
 	if err := ctx.Err(); err != nil {
 		return nil, fault.Wrap(fault.CodeCanceled, "evidenceapp.read", err)
 	}
@@ -125,11 +125,18 @@ func readRegularFile(ctx context.Context, path string, maximum int, field string
 	if pathInfo.Mode()&os.ModeSymlink != 0 || !pathInfo.Mode().IsRegular() {
 		return nil, fault.New(fault.CodeInvalidInput, "evidenceapp.lstat", field, "input path must name a regular file directly")
 	}
+	// #nosec G304 -- the CLI explicitly accepts caller-selected local input paths;
+	// Lstat rejects symlinks and non-regular files before this open.
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, fault.WrapField(fault.CodeInvalidInput, "evidenceapp.open", field, err)
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil && retErr == nil {
+			data = nil
+			retErr = fault.WrapField(fault.CodeInvalidInput, "evidenceapp.close", field, closeErr)
+		}
+	}()
 	info, err := file.Stat()
 	if err != nil {
 		return nil, fault.WrapField(fault.CodeInvalidInput, "evidenceapp.stat", field, err)
@@ -140,7 +147,7 @@ func readRegularFile(ctx context.Context, path string, maximum int, field string
 	if info.Size() < 1 || info.Size() > int64(maximum) {
 		return nil, fault.Format(fault.CodeLimitExceeded, "evidenceapp.stat", field, "got %d bytes; maximum is %d", info.Size(), maximum)
 	}
-	data, err := io.ReadAll(io.LimitReader(file, int64(maximum)+1))
+	data, err = io.ReadAll(io.LimitReader(file, int64(maximum)+1))
 	if err != nil {
 		return nil, fault.WrapField(fault.CodeInvalidInput, "evidenceapp.read", field, err)
 	}
