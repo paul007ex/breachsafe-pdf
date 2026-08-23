@@ -2,6 +2,15 @@
 
 # Security and trust boundaries
 
+## Contents
+
+- [Scope](#scope)
+- [Threats addressed](#threats-addressed)
+- [Trust statements](#trust-statements)
+- [Container boundary](#container-boundary)
+- [Correlation override](#correlation-override)
+- [Reporting limitations](#reporting-limitations)
+
 ## Scope
 
 This page describes the PDF compiler's security boundary. It does not claim that a

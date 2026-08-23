@@ -2,6 +2,15 @@
 
 # Input and output contracts
 
+## Contents
+
+- [CLI](#cli)
+- [Render request](#render-request)
+- [Producer documents](#producer-documents)
+- [Correlation](#correlation)
+- [RenderResult](#renderresult)
+- [Limits and unsupported capabilities](#limits-and-unsupported-capabilities)
+
 ## CLI
 
 ```text

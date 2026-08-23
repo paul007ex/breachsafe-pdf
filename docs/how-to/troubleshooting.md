@@ -2,6 +2,16 @@
 
 # Troubleshoot a report run
 
+## Contents
+
+- [`--version` prints the wrong version](#version-prints-the-wrong-version)
+- [`schema mismatch`](#schema-mismatch)
+- [`digest mismatch`](#digest-mismatch)
+- [`correlation mismatch`](#correlation-mismatch)
+- [`LIMIT_EXCEEDED`](#limit_exceeded)
+- [Docker cannot see `/tmp`](#docker-cannot-see-tmp)
+- [PDF renders but is rejected](#pdf-renders-but-is-rejected-by-a-consumer)
+
 ## `--version` prints the wrong version
 
 The generator version is injected at build time:

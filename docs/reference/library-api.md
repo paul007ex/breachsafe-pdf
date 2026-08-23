@@ -5,6 +5,13 @@
 The repository's public operational entrypoint is the `evidence-report` binary.
 The current Go packages are internal, but their boundaries define the v1 design.
 
+## Contents
+
+- [CLI call graph](#cli-call-graph)
+- [File request types](#file-request-types)
+- [Renderer boundary](#renderer-boundary)
+- [FPDF calls](#fpdf-calls)
+
 ## CLI call graph
 
 ```mermaid

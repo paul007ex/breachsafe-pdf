@@ -6,6 +6,15 @@ This is the shortest complete path from a QuReddy TLS scan to a correlated
 BreachSAFE PDF. It uses Docker, writes all files into one run directory, and leaves
 the original producer bytes unchanged.
 
+## Contents
+
+- [Prerequisites](#prerequisites)
+- [Capture versions](#capture-versions)
+- [Run QuReddy once](#run-qureddy-once)
+- [Create the CBOM from that result](#create-the-cbom-from-that-result)
+- [Create the request and render](#create-the-request-and-render)
+- [Verify and inspect](#verify-and-inspect)
+
 ## Prerequisites
 
 - Docker with outbound TCP 443 access.

@@ -2,6 +2,15 @@
 
 # Architecture
 
+## Contents
+
+- [Dependency direction](#dependency-direction)
+- [The application middle layer](#the-application-middle-layer)
+- [Presentation layer](#presentation-layer)
+- [Tool provenance boundary](#tool-provenance-boundary)
+- [Current v1 limitation](#current-v1-limitation)
+- [Extension points](#extension-points)
+
 ## Dependency direction
 
 ```mermaid

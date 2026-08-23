@@ -5,6 +5,14 @@
 This procedure produces a report for a TLS target. It requires network access to the
 target and uses two containers: the QuReddy collector and the BreachSAFE PDF compiler.
 
+## Contents
+
+- [Capture tool versions](#1-capture-tool-versions)
+- [Run one QuReddy scan](#2-run-one-qureddy-scan)
+- [Serialize the CBOM](#3-serialize-the-cbom-from-the-same-result)
+- [Build the render request](#4-build-the-render-request)
+- [Render and verify](#5-render-and-verify)
+
 ## 1. Capture tool versions
 
 Capture versions before the scan. Store the command output with the run:

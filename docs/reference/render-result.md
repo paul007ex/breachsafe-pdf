@@ -5,6 +5,13 @@
 RenderResult is the machine-readable receipt adjacent to every successful PDF.
 It is not a replacement for the input CBOM or scan JSON.
 
+## Contents
+
+- [Top-level fields](#top-level-fields)
+- [Input artifact relationship](#input-artifact-relationship)
+- [Capability result statuses](#capability-result-statuses)
+- [Digest interpretation](#digest-interpretation)
+
 ## Top-level fields
 
 | Field | Meaning |
