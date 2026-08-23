@@ -39,6 +39,9 @@ func TestRenderFilesWritesExactNoClobberPair(t *testing.T) {
 	if result.PDF.SHA256 != evidence.DigestBytes(pdfBytes) || result.PDF.Bytes != len(pdfBytes) || result.PDF.Pages != 9 {
 		t.Fatalf("result PDF descriptor = %+v", result.PDF)
 	}
+	if result.InputProfile != "qureddy-single-scan" || result.InputProfileVersion != "v1alpha1" || result.ReportProfile != "breachsafe/community" || result.ReportProfileVersion != "v1alpha1" {
+		t.Fatalf("result profile identity = %#v", result)
+	}
 	// #nosec G304 -- resultPath is created under t.TempDir().
 	resultBytes, err := os.ReadFile(resultPath)
 	if err != nil {

@@ -6,13 +6,14 @@
 
 1. [Identity command](#identity-command)
 2. [Render command](#render-command)
-3. [Streams and exit codes](#streams-and-exit-codes)
-4. [Container invocation](#container-invocation)
+3. [Profile CLI](#profile-cli)
+4. [Streams and exit codes](#streams-and-exit-codes)
+5. [Container invocation](#container-invocation)
 
 ## Identity command
 
 ```bash
-breachsafe-report-go --version
+breachsafe-pdf --version
 ```
 
 Output is one line containing the binary name and build version. The version is
@@ -21,22 +22,45 @@ embedded at build time and is also written to PDF metadata and RenderResult.
 ## Render command
 
 ```text
-breachsafe-report-go
-  -request REQUEST.json
-  -cbom CBOM.json
-  -scan-json SCAN.json
-  -pdf REPORT.pdf
-  -result REPORT.result.json
+breachsafe-pdf render --profile breachsafe/community \
+  --request REQUEST.json \
+  --cbom CBOM.json \
+  --scan-json SCAN.json \
+  --pdf REPORT.pdf \
+  --result REPORT.result.json
 ```
 
 | Option | Required | Description |
 | --- | --- | --- |
-| `-version` | no | Print the binary version and exit |
-| `-request` | yes | Bounded render request JSON |
-| `-cbom` | yes | Exact CycloneDX 1.7 CBOM file |
-| `-scan-json` | yes | Exact `qureddy.scan.v1` file |
-| `-pdf` | yes | New PDF output path |
-| `-result` | yes | New RenderResult output path |
+| `--profile` | yes | Versioned report profile identifier |
+| `--request` | yes | Bounded render request JSON |
+| `--cbom` | yes | Exact CycloneDX 1.7 CBOM file |
+| `--scan-json` | yes | Exact `qureddy.scan.v1` file |
+| `--pdf` | yes | New PDF output path |
+| `--result` | yes | New RenderResult output path |
+| `--verbose` | no | Enable informational `log/slog` diagnostics on stderr |
+| `--log-format` | no | `text` or `json` diagnostics; default `text` |
+
+## Profile CLI
+
+The forward-compatible profile command makes the report projection explicit:
+
+```bash
+breachsafe-pdf version
+breachsafe-pdf profile list
+breachsafe-pdf profile inspect breachsafe/community
+breachsafe-pdf render --profile breachsafe/community \
+  --request REQUEST.json \
+  --cbom CBOM.json \
+  --scan-json SCAN.json \
+  --pdf REPORT.pdf \
+  --result REPORT.result.json
+```
+
+`breachsafe/community` currently selects the
+`qureddy-single-scan/v1alpha1` input adapter. Future OSCAL and compliance
+profiles must register their own adapter and mapping; the PDF renderer never
+parses producer-native bytes.
 
 ## Streams and exit codes
 
@@ -48,7 +72,9 @@ breachsafe-report-go
 | Admission failure | Empty | Structured fault message | Typed nonzero code |
 
 The CLI writes only the final RenderResult to stdout on success. The PDF is written
-to the path supplied by `-pdf`.
+to the path supplied by `--pdf`. Diagnostics use Go `log/slog`, default to errors,
+and are written only to stderr. Evidence bytes, secrets, and sensitive paths are
+not logged.
 
 ## Container invocation
 

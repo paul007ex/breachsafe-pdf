@@ -20,6 +20,10 @@ It is not a replacement for the input CBOM or scan JSON.
 | `report_id` | Request report identity |
 | `contract_version` | Internal report-model contract |
 | `input_contract` | Accepted producer-input contract |
+| `input_profile` | Versioned producer adapter identity |
+| `input_profile_version` | Producer adapter contract version |
+| `report_profile` | Versioned audience/report projection identity |
+| `report_profile_version` | Report profile contract version |
 | `view` | Rendered view name |
 | `generated_at` | Request generation time |
 | `admission_request_sha256` | Exact request bytes admitted |

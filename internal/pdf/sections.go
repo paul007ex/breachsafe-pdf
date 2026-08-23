@@ -630,7 +630,7 @@ func (layout *layout) provenance() error {
 	for _, item := range [][2]string{
 		{"Report schema", layout.model.SchemaVersion},
 		{"Report model SHA-256", layout.modelDigest},
-		{"Generator", "breachsafe-report-go " + layout.renderer.generatorVersion + optionalPrefix(" @ ", layout.renderer.generatorCommit)},
+		{"Generator", "breachsafe-pdf " + layout.renderer.generatorVersion + optionalPrefix(" @ ", layout.renderer.generatorCommit)},
 		{"PDF renderer", rendererName + " " + libraryVersion()},
 		{"Font bundle SHA-256", fontDigest()},
 		{"Asset bundle SHA-256", layout.modelAssetDigest()},

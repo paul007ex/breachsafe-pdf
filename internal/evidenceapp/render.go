@@ -15,7 +15,11 @@ import (
 	"github.com/paul007ex/breachsafe-pdf/internal/admission"
 	"github.com/paul007ex/breachsafe-pdf/internal/evidence"
 	"github.com/paul007ex/breachsafe-pdf/internal/fault"
+	"github.com/paul007ex/breachsafe-pdf/internal/input"
+	"github.com/paul007ex/breachsafe-pdf/internal/input/adapters/qureddy"
 	"github.com/paul007ex/breachsafe-pdf/internal/output"
+	"github.com/paul007ex/breachsafe-pdf/internal/report"
+	"github.com/paul007ex/breachsafe-pdf/internal/report/profiles/community"
 )
 
 const maxPDFBytes = 100 << 20
@@ -34,6 +38,16 @@ type Build struct {
 }
 
 func RenderFiles(ctx context.Context, request FileRequest, renderer evidence.Renderer, limits admission.Limits, build Build) (evidence.RenderResult, error) {
+	return RenderFilesProfile(ctx, request, renderer, limits, build, qureddy.Adapter{}, community.Profile{})
+}
+
+// RenderFilesProfile runs the explicit adapter -> report-profile -> renderer
+// pipeline. The legacy RenderFiles function remains as a compatibility alias
+// for the original community path.
+func RenderFilesProfile(ctx context.Context, request FileRequest, renderer evidence.Renderer, limits admission.Limits, build Build, adapter input.Adapter, profile report.Profile) (evidence.RenderResult, error) {
+	if adapter == nil || profile == nil {
+		return evidence.RenderResult{}, fault.New(fault.CodeInvalidInput, "evidenceapp.render_files", "profile", "input adapter and report profile are required")
+	}
 	for field, value := range map[string]string{
 		"request": request.RequestPath, "cbom": request.CBOMPath, "scan_json": request.ScanJSONPath,
 		"pdf": request.PDFPath, "result": request.ResultPath,
@@ -54,19 +68,35 @@ func RenderFiles(ctx context.Context, request FileRequest, renderer evidence.Ren
 	if err != nil {
 		return evidence.RenderResult{}, err
 	}
-	admitted, err := admission.Admit(ctx, requestBytes, cbomBytes, scanBytes, limits)
+	if adapter.ID() != profile.InputAdapterID() {
+		return evidence.RenderResult{}, fault.Format(fault.CodeInvalidInput, "evidenceapp.render_files", "profile", "report profile %q requires input adapter %q, got %q", profile.ID(), profile.InputAdapterID(), adapter.ID())
+	}
+	admitted, err := adapter.Admit(ctx, input.Input{Request: requestBytes, Artifacts: map[string][]byte{"cbom": cbomBytes, "scan-json": scanBytes}}, limits)
 	if err != nil {
 		return evidence.RenderResult{}, err
 	}
-	return Render(ctx, admitted, request.PDFPath, request.ResultPath, renderer, limits.Model, build)
+	if err := profile.Validate(ctx, admitted.Result.Model, limits.Model); err != nil {
+		return evidence.RenderResult{}, err
+	}
+	return renderWithProfiles(ctx, admitted.Result, request.PDFPath, request.ResultPath, renderer, limits.Model, build, admitted.Contract, admitted.ID, admitted.Version, profile.ID(), profile.Version(), profile.View())
 }
 
 func Render(ctx context.Context, admitted admission.Result, pdfPath, resultPath string, renderer evidence.Renderer, limits evidence.Limits, build Build) (evidence.RenderResult, error) {
+	return renderWithProfiles(ctx, admitted, pdfPath, resultPath, renderer, limits, build, evidence.InputContract, "", "", "", "", "community_single_scan")
+}
+
+func renderWithProfiles(ctx context.Context, admitted admission.Result, pdfPath, resultPath string, renderer evidence.Renderer, limits evidence.Limits, build Build, inputContract, inputProfile, inputProfileVersion, reportProfile, reportProfileVersion, view string) (evidence.RenderResult, error) {
 	if renderer == nil || !renderer.Ready() {
 		return evidence.RenderResult{}, fault.New(fault.CodeInvalidInput, "evidenceapp.render", "renderer", "renderer is required")
 	}
 	if strings.TrimSpace(pdfPath) == "" || strings.TrimSpace(resultPath) == "" {
 		return evidence.RenderResult{}, fault.New(fault.CodeInvalidInput, "evidenceapp.render", "output", "PDF and result paths are required")
+	}
+	if strings.TrimSpace(inputContract) == "" {
+		return evidence.RenderResult{}, fault.New(fault.CodeInvalidInput, "evidenceapp.render", "input_contract", "input contract is required")
+	}
+	if strings.TrimSpace(view) == "" {
+		return evidence.RenderResult{}, fault.New(fault.CodeInvalidInput, "evidenceapp.render", "view", "report view is required")
 	}
 	model := evidence.Canonicalize(admitted.Model)
 	if err := evidence.Validate(ctx, model, limits); err != nil {
@@ -76,7 +106,7 @@ func Render(ctx context.Context, admitted admission.Result, pdfPath, resultPath 
 	if err != nil {
 		return evidence.RenderResult{}, err
 	}
-	renderRequestDigest, err := evidence.RenderRequestDigest(model)
+	renderRequestDigest, err := evidence.RenderRequestDigestForView(model, view)
 	if err != nil {
 		return evidence.RenderResult{}, err
 	}
@@ -92,11 +122,13 @@ func Render(ctx context.Context, admitted admission.Result, pdfPath, resultPath 
 	}
 	result := evidence.RenderResult{
 		SchemaVersion: evidence.RenderResultVersion, ReportID: model.Identity.ReportID,
-		ContractVersion: evidence.SchemaVersion, InputContract: evidence.InputContract, View: "community_single_scan",
+		ContractVersion: evidence.SchemaVersion, InputContract: inputContract,
+		InputProfile: inputProfile, InputProfileVersion: inputProfileVersion,
+		ReportProfile: reportProfile, ReportProfileVersion: reportProfileVersion, View: view,
 		GeneratedAt: model.Identity.GeneratedAt.UTC(), AdmissionRequestSHA256: admitted.RequestBytesSHA256,
 		ModelSHA256: modelDigest, RenderRequestSHA256: renderRequestDigest,
 		PDF:            evidence.PDFDescriptor{Path: filepath.Base(pdfPath), MediaType: document.MediaType, SHA256: evidence.DigestBytes(document.Bytes), Bytes: len(document.Bytes), Pages: document.Pages},
-		Generator:      evidence.BuildIdentity{Name: "breachsafe-report-go", Version: build.GeneratorVersion, Commit: build.GeneratorCommit},
+		Generator:      evidence.BuildIdentity{Name: "breachsafe-pdf", Version: build.GeneratorVersion, Commit: build.GeneratorCommit},
 		Renderer:       evidence.BuildIdentity{Name: document.RendererName, Version: document.RendererVersion},
 		FontBundle:     evidence.BundleIdentity{Name: document.FontBundleName, SHA256: document.FontBundleSHA256},
 		AssetBundle:    evidence.BundleIdentity{Name: "BreachSAFE approved report visuals/v1", SHA256: document.AssetBundleSHA256},

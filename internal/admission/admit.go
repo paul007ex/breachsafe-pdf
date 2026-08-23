@@ -211,7 +211,7 @@ func buildModel(request Request, scan qureddyDocument, cbom cycloneDXDocument, c
 			ProducerToolRef:       "tool-qureddy",
 			ProducedAt:            cbom.Metadata.Timestamp.UTC(),
 			Validations: []evidence.ValidationResult{{
-				Validator: "breachsafe-report-go/admission", Version: "v1alpha1", Status: evidence.ValidationValid,
+				Validator: "breachsafe-pdf/admission", Version: "v1alpha1", Status: evidence.ValidationValid,
 				Detail: "CycloneDX 1.7 structure, CBOM semantics, references, counts, and QuReddy metadata accepted",
 			}},
 			Relationship: "correlated with scan-json: " + correlation.State,
@@ -228,7 +228,7 @@ func buildModel(request Request, scan qureddyDocument, cbom cycloneDXDocument, c
 			ProducerToolRef:       "tool-qureddy",
 			ProducedAt:            scan.Scan.CompletedAt.UTC(),
 			Validations: []evidence.ValidationResult{{
-				Validator: "breachsafe-report-go/admission", Version: "v1alpha1", Status: evidence.ValidationValid,
+				Validator: "breachsafe-pdf/admission", Version: "v1alpha1", Status: evidence.ValidationValid,
 				Detail: "qureddy.scan.v1 structure, enums, stable IDs, references, and deterministic summary counts accepted",
 			}},
 			Relationship: "correlated with cbom: " + correlation.State,

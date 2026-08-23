@@ -35,7 +35,7 @@ docker run --rm breachsafe-pdf:local --version
 Expected output for this example build:
 
 ```text
-breachsafe-report-go 0.1.1
+breachsafe-pdf 0.1.1
 ```
 
 ## Render the fixture

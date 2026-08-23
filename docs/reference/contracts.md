@@ -14,13 +14,13 @@
 ## CLI
 
 ```text
-breachsafe-report-go --version
-breachsafe-report-go \
-  -request REQUEST.json \
-  -cbom CBOM.json \
-  -scan-json SCAN.json \
-  -pdf REPORT.pdf \
-  -result REPORT.result.json
+breachsafe-pdf --version
+breachsafe-pdf render --profile breachsafe/community \
+  --request REQUEST.json \
+  --cbom CBOM.json \
+  --scan-json SCAN.json \
+  --pdf REPORT.pdf \
+  --result REPORT.result.json
 ```
 
 All five render paths are required. Inputs must be regular files. Symlinks and

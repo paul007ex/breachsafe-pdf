@@ -62,11 +62,12 @@ docker run --rm \
   --user 65532:65532 \
   -v "$RUN_DIR:/work/run:rw" \
   breachsafe-pdf:local \
-  -request /work/run/request.json \
-  -cbom /work/run/scan.cdx.json \
-  -scan-json /work/run/scan.json \
-  -pdf /work/run/report.pdf \
-  -result /work/run/report.result.json
+  render --profile breachsafe/community \
+  --request /work/run/request.json \
+  --cbom /work/run/scan.cdx.json \
+  --scan-json /work/run/scan.json \
+  --pdf /work/run/report.pdf \
+  --result /work/run/report.result.json
 ```
 
 Verify the receipt and PDF metadata:
@@ -135,7 +136,7 @@ The orchestrator observes versions at runtime:
 ```bash
 qureddy --version
 openssl version
-breachsafe-report-go --version
+breachsafe-pdf --version
 ```
 
 The producer CBOM and scan JSON preserve collector versions. The PDF binary exposes

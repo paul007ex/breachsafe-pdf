@@ -92,7 +92,7 @@ func (renderer *Renderer) Render(ctx context.Context, model evidence.CommunitySi
 	pdf.SetTitle(model.Identity.Name, true)
 	pdf.SetAuthor("BreachSAFE", true)
 	pdf.SetSubject("Evidence-backed Community Single-Scan quantum readiness report", true)
-	pdf.SetCreator("breachsafe-report-go "+renderer.generatorVersion+"; "+rendererName+" "+libraryVersion(), true)
+	pdf.SetCreator("breachsafe-pdf "+renderer.generatorVersion+"; "+rendererName+" "+libraryVersion(), true)
 	pdf.SetKeywords("BreachSAFE, QuReddy, evidence, CBOM, CycloneDX, quantum readiness", true)
 	pdf.AliasNbPages("{nb}")
 
