@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 set -eu
 
-image="${BREACHSAFE_GOLDEN_GO_IMAGE:-ghcr.io/paul007ex/breachsafe-golden-go:1.26.6}"
+image="${BREACHSAFE_GOLDEN_GO_IMAGE:-ghcr.io/paul007ex/breachsafe-golden-go:v0.1.0}"
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 
 exec docker run --rm \
