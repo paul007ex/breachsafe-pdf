@@ -17,18 +17,21 @@ workflow, and the evidence boundaries around generated reports.
 
 ## Contents
 
-- [Product boundary](#product-boundary)
-- [Quickstart](quickstart.md)
-- [Architecture and data flow](explanation/architecture.md)
-- [Security model](explanation/security.md)
-- [First report](tutorials/first-report.md)
-- [Container pipeline](how-to/container-pipeline.md)
-- [Troubleshooting](how-to/troubleshooting.md)
-- [CLI reference](reference/cli.md)
-- [Go library and call reference](reference/library-api.md)
-- [Input and output contracts](reference/contracts.md)
-- [RenderResult reference](reference/render-result.md)
-- [Release gates](contributors/release-gates.md)
+1. [Product boundary](#product-boundary)
+2. [Quickstart](quickstart.md)
+3. [Architecture and data flow](explanation/architecture.md)
+4. [Security model](explanation/security.md)
+5. [First report](tutorials/first-report.md)
+6. [Container pipeline](how-to/container-pipeline.md)
+7. [Troubleshooting](how-to/troubleshooting.md)
+8. [CLI reference](reference/cli.md)
+9. [Go library and call reference](reference/library-api.md)
+10. [Input and output contracts](reference/contracts.md)
+11. [RenderResult reference](reference/render-result.md)
+12. [Release gates](contributors/release-gates.md)
+
+Repository governance is documented in [`../../CONTRIBUTING.md`](../../CONTRIBUTING.md)
+and [`../../SECURITY.md`](../../SECURITY.md).
 
 ## Product boundary
 

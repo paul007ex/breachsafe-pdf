@@ -2,6 +2,12 @@
 
 # BreachSAFE PDF
 
+[![CI](https://github.com/paul007ex/breachsafe-pdf/actions/workflows/ci.yml/badge.svg)](https://github.com/paul007ex/breachsafe-pdf/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/paul007ex/breachsafe-pdf/actions/workflows/codeql.yml/badge.svg)](https://github.com/paul007ex/breachsafe-pdf/actions/workflows/codeql.yml)
+[![Go 1.26](https://img.shields.io/badge/go-1.26.6-00ADD8?style=flat-square&logo=go&logoColor=white)](go.mod)
+[![License](https://img.shields.io/badge/license-PolyForm--Noncommercial--1.0.0-6f42c1?style=flat-square)](LICENSE)
+[![REUSE](https://img.shields.io/badge/license%20metadata-REUSE-green?style=flat-square)](REUSE.toml)
+
 Reusable Go PDF compiler for evidence-backed quantum-readiness reports.
 
 BreachSAFE PDF accepts exact QuReddy scan JSON, an exact CycloneDX 1.7 CBOM, and a
@@ -12,6 +18,19 @@ them into a typed report model, and emits a human-readable PDF plus a machine-re
 The compiler is the renderer and admission boundary. Collection, OSCAL interpretation,
 ePack composition, signing, delivery, tenancy, and identity management remain in the
 calling product.
+
+## Contents
+
+1. [Quickstart](#quickstart)
+2. [Architecture](#architecture)
+3. [Contracts](#contracts)
+4. [Tool provenance](#tool-provenance)
+5. [Security boundary](#security-boundary)
+6. [Enterprise integration boundary](#enterprise-integration-boundary)
+7. [Current producer limitation](#current-producer-limitation)
+8. [Documentation](#documentation)
+9. [Development](#development)
+10. [License](#license)
 
 ## Quickstart
 
@@ -164,6 +183,8 @@ from one saved `ScanResult` and require `matched` relationships.
 - [Security](docs/explanation/security.md)
 - [Go library reference](docs/reference/library-api.md)
 - [Release gates](docs/contributors/release-gates.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
 
 ## Development
 

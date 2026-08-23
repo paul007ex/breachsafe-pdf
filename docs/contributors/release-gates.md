@@ -2,6 +2,12 @@
 
 # Release gates
 
+## Contents
+
+1. [Local Go gates](#local-go-gates)
+2. [Container gates](#container-gates)
+3. [Release evidence](#release-evidence)
+
 ## Local Go gates
 
 Run from the repository root:
