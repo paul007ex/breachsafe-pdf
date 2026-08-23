@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	generatorVersion = "0.0.0-pressure-test"
+	generatorVersion = "0.1.0"
 	generatorCommit  = ""
 )
 
