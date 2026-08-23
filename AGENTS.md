@@ -12,3 +12,5 @@ release, and review gate. Add the test-harness skill for golden PDF/render and f
 
 The CI image is `ghcr.io/paul007ex/breachsafe-golden-go:1.26.6`; do not copy its Dockerfile into
 this repository. Product runtime images remain minimal and non-root.
+
+Run the full local gate sequence with `scripts/run-gates.sh` after the golden image is published.
