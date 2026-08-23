@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/paul007ex/breachsafe-container-go:1.26.6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Format check
+        run: test -z "$(gofmt -l .)"
+      - name: Vet
+        run: go vet ./...
+      - name: Test
+        run: go test ./...
+      - name: Race test
+        run: go test -race ./...
+      - name: Module verification
+        run: go mod verify
+      - name: Staticcheck
+        run: staticcheck ./...
+      # Gosec is present in the shared toolchain. Make it a required gate after
+      # the inherited prototype's path/error findings are remediated; do not
+      # hide those findings with exclusions.
+      - name: Govulncheck
+        run: govulncheck ./...
+      - name: OSV scan
+        run: osv-scanner scan source -r .

@@ -4,7 +4,6 @@ package pdf
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	"codeberg.org/go-pdf/fpdf"
@@ -779,13 +778,4 @@ func nonEmpty(values []string) []string {
 		}
 	}
 	return result
-}
-
-func sortedKeys(values map[string]int) []string {
-	keys := make([]string, 0, len(values))
-	for key := range values {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
 }
