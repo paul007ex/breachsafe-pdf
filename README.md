@@ -10,6 +10,9 @@ source-neutral report model, and emits deterministic PDF bytes plus a machine-re
 `RenderResult`. Evidence collection, OSCAL interpretation, ePack composition, signing, and
 storage remain outside this repository.
 
+Read the [documentation index](docs/README.md) for the first-report tutorial, container pipeline,
+input and output contracts, architecture explanation, and release gates.
+
 ## Architecture
 
 ```text
@@ -29,8 +32,10 @@ QuReddy / CBOM / report request
 ```
 
 The implementation uses Codeberg FPDF directly, with fixed design tokens, bounded pagination,
-embedded assets, no remote resources, and no arbitrary template execution. The initial command is
-`cmd/evidence-report`; a stable library API will be exposed after the input contract is finalized.
+embedded assets, no remote resources, and no arbitrary template execution. The command in
+`cmd/evidence-report` is a thin boundary over the reusable `internal/evidenceapp` and
+`internal/pdf` packages. The current library packages remain internal until the input contract
+and public API stability policy are finalized.
 
 ## Development
 
