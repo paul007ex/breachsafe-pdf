@@ -662,7 +662,10 @@ func Validate(ctx context.Context, model CommunitySingleScan, limits Limits) err
 		if err := validateShort(prefix+".label", axis.Label, limits, false); err != nil {
 			return err
 		}
-		if err := validateShort(prefix+".value", axis.Value, limits, false); err != nil {
+		// A posture value may contain a complete observed algorithm/cipher
+		// inventory from the producer. Keep it bounded as report detail rather
+		// than applying the identifier-sized short-string limit.
+		if err := validateDetail(prefix+".value", axis.Value, limits, false); err != nil {
 			return err
 		}
 		if !validAuthority(axis.Authority) {
