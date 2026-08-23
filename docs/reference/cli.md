@@ -2,6 +2,13 @@
 
 # CLI reference
 
+## Contents
+
+1. [Identity command](#identity-command)
+2. [Render command](#render-command)
+3. [Streams and exit codes](#streams-and-exit-codes)
+4. [Container invocation](#container-invocation)
+
 ## Identity command
 
 ```bash

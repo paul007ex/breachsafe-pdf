@@ -5,6 +5,13 @@
 This tutorial builds the repository image and renders a report from the checked-in
 community fixture. It does not contact a network target.
 
+## Contents
+
+1. [Prerequisites](#prerequisites)
+2. [Build the image](#build-the-image)
+3. [Render the fixture](#render-the-fixture)
+4. [Verify the result](#verify-the-result)
+
 ## Prerequisites
 
 - Docker with BuildKit enabled.
