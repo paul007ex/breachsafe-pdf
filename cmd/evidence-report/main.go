@@ -27,6 +27,7 @@ func main() { os.Exit(run(os.Args[1:])) }
 func run(arguments []string) int {
 	flags := flag.NewFlagSet("evidence-report", flag.ContinueOnError)
 	flags.SetOutput(os.Stderr)
+	version := flags.Bool("version", false, "print the report compiler version and exit")
 	requestPath := flags.String("request", "", "report identity and bounded render options JSON")
 	cbomPath := flags.String("cbom", "", "exact CycloneDX 1.7 CBOM JSON")
 	scanPath := flags.String("scan-json", "", "exact qureddy.scan.v1 JSON")
@@ -34,6 +35,10 @@ func run(arguments []string) int {
 	resultPath := flags.String("result", "", "new RenderResult JSON output path")
 	if err := flags.Parse(arguments); err != nil {
 		return 2
+	}
+	if *version {
+		fmt.Printf("breachsafe-report-go %s\n", generatorVersion)
+		return 0
 	}
 	if flags.NArg() != 0 || *requestPath == "" || *cbomPath == "" || *scanPath == "" || *pdfPath == "" || *resultPath == "" {
 		fmt.Fprintln(os.Stderr, "usage: evidence-report -request REQUEST.json -cbom CBOM.json -scan-json SCAN.json -pdf REPORT.pdf -result REPORT.result.json")
