@@ -379,6 +379,10 @@ type RenderResult struct {
 	ReportID               string             `json:"report_id"`
 	ContractVersion        string             `json:"contract_version"`
 	InputContract          string             `json:"input_contract"`
+	InputProfile           string             `json:"input_profile,omitempty"`
+	InputProfileVersion    string             `json:"input_profile_version,omitempty"`
+	ReportProfile          string             `json:"report_profile,omitempty"`
+	ReportProfileVersion   string             `json:"report_profile_version,omitempty"`
 	View                   string             `json:"view"`
 	GeneratedAt            time.Time          `json:"generated_at"`
 	AdmissionRequestSHA256 string             `json:"admission_request_sha256"`
@@ -459,6 +463,12 @@ func ModelDigest(in CommunitySingleScan) (string, error) {
 
 // RenderRequestDigest returns the digest of model and render options.
 func RenderRequestDigest(in CommunitySingleScan) (string, error) {
+	return RenderRequestDigestForView(in, "community_single_scan")
+}
+
+// RenderRequestDigestForView includes the selected report view in the digest,
+// preventing two projections of the same model from sharing a receipt digest.
+func RenderRequestDigestForView(in CommunitySingleScan, view string) (string, error) {
 	modelDigest, err := ModelDigest(in)
 	if err != nil {
 		return "", err
@@ -468,7 +478,7 @@ func RenderRequestDigest(in CommunitySingleScan) (string, error) {
 		View        string        `json:"view"`
 		ModelSHA256 string        `json:"model_sha256"`
 		Options     RenderOptions `json:"options"`
-	}{SchemaVersion, "community_single_scan", modelDigest, in.RenderOptions}
+	}{SchemaVersion, view, modelDigest, in.RenderOptions}
 	data, err := json.Marshal(request)
 	if err != nil {
 		return "", fault.Wrap(fault.CodeInvalidInput, "evidence.render_request_digest", err)

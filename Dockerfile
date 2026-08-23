@@ -17,6 +17,12 @@ COPY internal ./internal
 
 RUN go build \
     -trimpath \
+    -ldflags="-s -w -buildid= -X main.version=${REPORT_VERSION}" \
+    -o /out/breachsafe-pdf \
+    ./cmd/breachsafe-pdf
+
+RUN go build \
+    -trimpath \
     -ldflags="-s -w -buildid= -X main.generatorVersion=${REPORT_VERSION}" \
     -o /out/breachsafe-report \
     ./cmd/evidence-report
@@ -32,7 +38,8 @@ LABEL org.opencontainers.image.title="BreachSAFE PDF report compiler" \
 
 WORKDIR /work
 COPY --from=build --chown=65532:65532 /out/breachsafe-report /usr/local/bin/breachsafe-report
+COPY --from=build --chown=65532:65532 /out/breachsafe-pdf /usr/local/bin/breachsafe-pdf
 
 USER 65532:65532
 STOPSIGNAL SIGTERM
-ENTRYPOINT ["/usr/local/bin/breachsafe-report"]
+ENTRYPOINT ["/usr/local/bin/breachsafe-pdf"]

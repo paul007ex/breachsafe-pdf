@@ -5,6 +5,7 @@
 ## Contents
 
 - [Dependency direction](#dependency-direction)
+- [Profile boundaries](#profile-boundaries)
 - [The application middle layer](#the-application-middle-layer)
 - [Presentation layer](#presentation-layer)
 - [Tool provenance boundary](#tool-provenance-boundary)
@@ -15,10 +16,10 @@
 
 ```mermaid
 flowchart TD
-    Q[QuReddy container] -->|scan JSON| A[admission.Admit]
-    Q -->|CycloneDX CBOM| A
-    R[Render request] --> A
-    A --> M[CommunitySingleScan]
+    Q[QuReddy container] -->|scan JSON + CBOM| IA[QuReddy input adapter]
+    R[Render request] --> RP[breachsafe/community profile]
+    RP --> IA
+    IA --> M[CommunitySingleScan]
     M --> E[evidenceapp.Render]
     E --> P[pdf.Renderer]
     P --> F[go-pdf/fpdf API]
@@ -29,6 +30,28 @@ flowchart TD
 The Mermaid diagram is a navigation aid. The plain-text path below is the
 authoritative dependency description and remains readable in terminals and source
 archives.
+
+## Profile boundaries
+
+The product has two separate strategy boundaries:
+
+```text
+producer bytes
+  ▼
+input adapter (QuReddy, OSCAL, Prowler, CBOM)
+  ▼
+normalized evidence model
+  ▼
+report profile (community, compliance, enterprise)
+  ▼
+PDF / JSON / RenderResult
+```
+
+The input adapter is an Adapter; the report profile is a Strategy; both are
+selected through deterministic registries. A report profile may declare which
+input adapter it requires, but neither boundary is allowed to parse arbitrary
+files or guess a schema. This is the explicit path toward a future manifest
+interface; auto-detection is not authoritative.
 
 ```text
 External producer containers

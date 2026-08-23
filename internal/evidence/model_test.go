@@ -18,6 +18,21 @@ func TestAdmittedModelPassesClosedContract(t *testing.T) {
 	}
 }
 
+func TestRenderRequestDigestIncludesReportView(t *testing.T) {
+	model := validModel(t)
+	community, err := evidence.RenderRequestDigestForView(model, "community_single_scan")
+	if err != nil {
+		t.Fatal(err)
+	}
+	compliance, err := evidence.RenderRequestDigestForView(model, "compliance")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if community == compliance {
+		t.Fatal("different report views share a render-request digest")
+	}
+}
+
 func TestClosedEnumsReferencesAndTextFailInvalidModels(t *testing.T) {
 	tests := map[string]func(*evidence.CommunitySingleScan){
 		"finding severity":      func(model *evidence.CommunitySingleScan) { model.Findings.Items[0].Severity = "favorable" },

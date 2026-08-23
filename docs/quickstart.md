@@ -93,11 +93,12 @@ docker run --rm \
   --user 65532:65532 \
   -v "$RUN_DIR:/work/run:rw" \
   "$PDF_IMAGE" \
-  -request /work/run/request.json \
-  -cbom /work/run/scan.cdx.json \
-  -scan-json /work/run/scan.json \
-  -pdf /work/run/report.pdf \
-  -result /work/run/report.result.json
+  render --profile breachsafe/community \
+  --request /work/run/request.json \
+  --cbom /work/run/scan.cdx.json \
+  --scan-json /work/run/scan.json \
+  --pdf /work/run/report.pdf \
+  --result /work/run/report.result.json
 ```
 
 ## Verify and inspect
