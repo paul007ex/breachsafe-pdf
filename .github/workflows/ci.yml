@@ -19,7 +19,7 @@ jobs:
   go:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/paul007ex/breachsafe-container-go:1.26.6
+      image: ghcr.io/paul007ex/breachsafe-golden-go:1.26.6
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
