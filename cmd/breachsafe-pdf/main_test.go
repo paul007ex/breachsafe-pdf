@@ -83,3 +83,49 @@ func TestRenderPreservesTypedInputExitCode(t *testing.T) {
 		t.Fatalf("render invalid input exit code = %d, want 2", code)
 	}
 }
+
+func TestParseRenderOptionsSupportsExplicitProfiles(t *testing.T) {
+	options, err := parseRenderOptions([]string{
+		"--input-profile", "qureddy-single-scan",
+		"--report-profile", "breachsafe/community",
+		"--request", "request.json",
+		"--cbom", "scan.cdx.json",
+		"--scan-json", "scan.json",
+	})
+	if err != nil {
+		t.Fatalf("parseRenderOptions: %v", err)
+	}
+	if options.inputProfileID != "qureddy-single-scan" {
+		t.Fatalf("input profile = %q", options.inputProfileID)
+	}
+	if options.reportProfileID != "breachsafe/community" {
+		t.Fatalf("report profile = %q", options.reportProfileID)
+	}
+}
+
+func TestParseRenderOptionsPreservesLegacyProfileAlias(t *testing.T) {
+	options, err := parseRenderOptions([]string{
+		"--profile", "breachsafe/community",
+		"--request", "request.json",
+		"--cbom", "scan.cdx.json",
+		"--scan-json", "scan.json",
+	})
+	if err != nil {
+		t.Fatalf("parseRenderOptions: %v", err)
+	}
+	if options.reportProfileID != "breachsafe/community" {
+		t.Fatalf("report profile = %q", options.reportProfileID)
+	}
+}
+
+func TestParseRenderOptionsRejectsConflictingReportProfiles(t *testing.T) {
+	if _, err := parseRenderOptions([]string{
+		"--profile", "breachsafe/community",
+		"--report-profile", "breachsafe/community",
+		"--request", "request.json",
+		"--cbom", "scan.cdx.json",
+		"--scan-json", "scan.json",
+	}); err == nil {
+		t.Fatal("legacy and explicit report profiles accepted together")
+	}
+}

@@ -12,13 +12,16 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/paul007ex/breachsafe-pdf/internal/admission"
 	"github.com/paul007ex/breachsafe-pdf/internal/evidenceapp"
 	"github.com/paul007ex/breachsafe-pdf/internal/fault"
 	"github.com/paul007ex/breachsafe-pdf/internal/input"
 	"github.com/paul007ex/breachsafe-pdf/internal/input/adapters/qureddy"
+	"github.com/paul007ex/breachsafe-pdf/internal/manifest"
 	"github.com/paul007ex/breachsafe-pdf/internal/pdf"
+	"github.com/paul007ex/breachsafe-pdf/internal/processlog"
 	"github.com/paul007ex/breachsafe-pdf/internal/report"
 	"github.com/paul007ex/breachsafe-pdf/internal/report/profiles/community"
 )
@@ -31,14 +34,18 @@ type registries struct {
 }
 
 type renderOptions struct {
-	profileID string
-	request   string
-	cbom      string
-	scanJSON  string
-	pdf       string
-	result    string
-	verbose   bool
-	logFormat string
+	legacyProfileID string
+	inputProfileID  string
+	reportProfileID string
+	request         string
+	cbom            string
+	scanJSON        string
+	manifest        string
+	pdf             string
+	result          string
+	logFile         string
+	verbose         bool
+	logFormat       string
 }
 
 func main() { os.Exit(run(os.Args[1:])) }
@@ -164,17 +171,32 @@ func render(args []string, registries registries) int {
 		renderUsage()
 		return 2
 	}
+	if options.manifest != "" {
+		run, err := manifest.Load(options.manifest)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 2
+		}
+		if err := applyManifest(&options, run); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return 2
+		}
+	}
 	logger, err := newLogger(options.logFormat, options.verbose)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
 	}
-	profile, err := registries.reports.Resolve(options.profileID)
+	profile, err := registries.reports.Resolve(options.reportProfileID)
 	if err != nil {
-		logger.Error("profile resolution failed", "profile", options.profileID, "error", err)
+		logger.Error("profile resolution failed", "profile", options.reportProfileID, "error", err)
 		return 2
 	}
-	adapter, err := registries.inputs.Resolve(profile.InputAdapterID())
+	inputProfileID := profile.InputAdapterID()
+	if options.inputProfileID != "" {
+		inputProfileID = options.inputProfileID
+	}
+	adapter, err := registries.inputs.Resolve(inputProfileID)
 	if err != nil {
 		logger.Error("input adapter resolution failed", "profile", profile.ID(), "error", err)
 		return 2
@@ -187,24 +209,56 @@ func parseRenderOptions(args []string) (renderOptions, error) {
 	flags.SetOutput(os.Stderr)
 	flags.Usage = renderUsage
 	options := renderOptions{}
-	flags.StringVar(&options.profileID, "profile", "", "report profile identifier")
+	flags.StringVar(&options.legacyProfileID, "profile", "", "deprecated report profile alias")
+	flags.StringVar(&options.inputProfileID, "input-profile", "", "input evidence profile identifier")
+	flags.StringVar(&options.reportProfileID, "report-profile", "", "report profile identifier")
 	flags.StringVar(&options.request, "request", "", "report request JSON")
 	flags.StringVar(&options.cbom, "cbom", "", "CycloneDX CBOM JSON")
 	flags.StringVar(&options.scanJSON, "scan-json", "", "producer scan JSON")
+	flags.StringVar(&options.manifest, "manifest", "", "versioned run manifest (alternative to direct inputs)")
 	flags.StringVar(&options.pdf, "pdf", "", "new PDF output path")
 	flags.StringVar(&options.result, "result", "", "new RenderResult output path")
+	flags.StringVar(&options.logFile, "log-file", "", "structured process log JSONL output")
 	flags.BoolVar(&options.verbose, "verbose", false, "enable informational diagnostics on stderr")
 	flags.StringVar(&options.logFormat, "log-format", "text", "diagnostic format: text or json")
 	if err := flags.Parse(args); err != nil {
 		return renderOptions{}, err
 	}
-	if flags.NArg() != 0 || options.profileID == "" {
+	if flags.NArg() != 0 {
 		return renderOptions{}, fmt.Errorf("profile and options are required")
+	}
+	if options.manifest != "" && (options.request != "" || options.cbom != "" || options.scanJSON != "") {
+		return renderOptions{}, fmt.Errorf("use either --manifest or direct input paths, not both")
+	}
+	if options.manifest == "" && (options.request == "" || options.cbom == "" || options.scanJSON == "") {
+		return renderOptions{}, fmt.Errorf("--manifest or direct request, cbom, and scan-json inputs are required")
+	}
+	if options.legacyProfileID != "" && options.reportProfileID != "" {
+		return renderOptions{}, fmt.Errorf("use either --profile or --report-profile, not both")
+	}
+	if options.reportProfileID == "" {
+		options.reportProfileID = options.legacyProfileID
+	}
+	if options.reportProfileID == "" && options.manifest == "" {
+		return renderOptions{}, fmt.Errorf("--report-profile is required")
 	}
 	return options, nil
 }
 
 func executeRender(options renderOptions, profile report.Profile, adapter input.Adapter, logger *slog.Logger) int {
+	var processFile *os.File
+	var process *processlog.Logger
+	if options.logFile != "" {
+		file, err := os.OpenFile(options.logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+		if err != nil {
+			logger.Error("process log open failed", "error", err)
+			return 2
+		}
+		processFile = file
+		defer processFile.Close()
+		process = processlog.New(processFile)
+		_ = process.Event(processlog.Event{Time: time.Now().UTC(), Phase: "render", Outcome: "started", InputProfile: adapter.ID(), ReportProfile: profile.ID()})
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	result, err := evidenceapp.RenderFilesProfile(ctx, evidenceapp.FileRequest{
@@ -213,6 +267,9 @@ func executeRender(options renderOptions, profile report.Profile, adapter input.
 	}, pdf.New(version, ""), admission.DefaultLimits(), evidenceapp.Build{GeneratorVersion: version}, adapter, profile)
 	if err != nil {
 		logger.Error("render failed", "profile", profile.ID(), "error", err)
+		if process != nil {
+			_ = process.Event(processlog.Event{Time: time.Now().UTC(), Phase: "render", Outcome: "failed", InputProfile: adapter.ID(), ReportProfile: profile.ID(), ErrorCode: string(fault.CodeOf(err)), Detail: "render failed"})
+		}
 		return fault.ExitCode(err)
 	}
 	if err := json.NewEncoder(os.Stdout).Encode(result); err != nil {
@@ -220,7 +277,30 @@ func executeRender(options renderOptions, profile report.Profile, adapter input.
 		return 1
 	}
 	logger.Info("render completed", "profile", profile.ID(), "pages", result.PDF.Pages, "pdf_bytes", result.PDF.Bytes)
+	if process != nil {
+		_ = process.Event(processlog.Event{Time: time.Now().UTC(), Phase: "render", Outcome: "completed", InputProfile: adapter.ID(), ReportProfile: profile.ID()})
+	}
 	return 0
+}
+
+func applyManifest(options *renderOptions, run manifest.Run) error {
+	if options.inputProfileID != "" && options.inputProfileID != run.InputProfile {
+		return fmt.Errorf("manifest input profile %q conflicts with flag %q", run.InputProfile, options.inputProfileID)
+	}
+	if options.reportProfileID != "" && run.ReportProfile != "" && options.reportProfileID != run.ReportProfile {
+		return fmt.Errorf("manifest report profile %q conflicts with flag %q", run.ReportProfile, options.reportProfileID)
+	}
+	options.inputProfileID = run.InputProfile
+	if options.reportProfileID == "" {
+		options.reportProfileID = run.ReportProfile
+	}
+	if options.reportProfileID == "" {
+		return fmt.Errorf("manifest report_profile or --report-profile is required")
+	}
+	options.request = run.Request.Path
+	options.cbom = run.Artifacts["cbom"].Path
+	options.scanJSON = run.Artifacts["scan-json"].Path
+	return nil
 }
 
 func isVersionCommand(args []string) bool {
@@ -249,15 +329,19 @@ func profileUsage() {
 }
 
 func renderUsage() {
-	fmt.Println("usage: breachsafe-pdf render --profile PROFILE OPTIONS")
+	fmt.Println("usage: breachsafe-pdf render [--report-profile PROFILE] [--input-profile PROFILE] OPTIONS")
 	fmt.Println()
 	fmt.Println("options:")
-	fmt.Println("  --profile ID       report profile identifier")
+	fmt.Println("  --profile ID       deprecated alias for --report-profile")
+	fmt.Println("  --input-profile ID input evidence profile identifier")
+	fmt.Println("  --report-profile ID report profile identifier")
 	fmt.Println("  --request PATH     report request JSON")
 	fmt.Println("  --cbom PATH        CycloneDX CBOM JSON")
 	fmt.Println("  --scan-json PATH   producer scan JSON")
+	fmt.Println("  --manifest PATH    versioned run manifest (alternative to direct inputs)")
 	fmt.Println("  --pdf PATH         new PDF output path")
 	fmt.Println("  --result PATH      new RenderResult output path")
+	fmt.Println("  --log-file PATH    structured process log JSONL output")
 	fmt.Println("  --verbose          enable informational diagnostics on stderr")
 	fmt.Println("  --log-format FMT   text or json diagnostics (default: text)")
 }
