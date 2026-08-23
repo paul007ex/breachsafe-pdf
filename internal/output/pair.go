@@ -50,12 +50,12 @@ func WritePair(ctx context.Context, pair Pair) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(pdfStage)
+	defer removeStage(pdfStage)
 	resultStage, err := stage(resultAbs, pair.ResultBytes)
 	if err != nil {
 		return err
 	}
-	defer os.Remove(resultStage)
+	defer removeStage(resultStage)
 
 	if err := ctx.Err(); err != nil {
 		return fault.Wrap(fault.CodeCanceled, "output.write_pair", err)
@@ -83,8 +83,11 @@ func stage(destination string, data []byte) (string, error) {
 	ok := false
 	defer func() {
 		if !ok {
-			file.Close()
-			os.Remove(path)
+			if closeErr := file.Close(); closeErr != nil {
+				removeStage(path)
+				return
+			}
+			removeStage(path)
 		}
 	}()
 	if err := file.Chmod(0o600); err != nil {
@@ -101,6 +104,13 @@ func stage(destination string, data []byte) (string, error) {
 	}
 	ok = true
 	return path, nil
+}
+
+func removeStage(path string) {
+	if err := os.Remove(path); err != nil && !errors.Is(err, os.ErrNotExist) {
+		// Staging cleanup is best effort after the primary operation has failed.
+		return
+	}
 }
 
 func commit(staged, destination string) error {

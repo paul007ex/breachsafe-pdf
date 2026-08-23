@@ -32,7 +32,10 @@ jobs:
       - name: Vet
         run: go vet ./...
       - name: Test
-        run: go test ./...
+        run: |
+          set -o pipefail
+          go test -json ./... | tee /tmp/go-test.json
+          test "$(jq -s '[.[] | select(.Action == "skip" and .Test != null)] | length' /tmp/go-test.json)" -eq 0
       - name: Race test
         run: go test -race ./...
       - name: Module verification

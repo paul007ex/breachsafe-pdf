@@ -56,6 +56,7 @@ func validModel(t testing.TB) evidence.CommunitySingleScan {
 
 func mustRead(t testing.TB, path string) []byte {
 	t.Helper()
+	// #nosec G304 -- test fixtures are fixed repository paths, not user input.
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)

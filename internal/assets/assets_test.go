@@ -34,9 +34,15 @@ func TestEmbeddedAssetsDecodeAndParse(t *testing.T) {
 }
 
 func TestReturnedAssetsAreCallerOwned(t *testing.T) {
-	first, _ := IconSVG(IconShieldCheck)
+	first, err := IconSVG(IconShieldCheck)
+	if err != nil {
+		t.Fatal(err)
+	}
 	first[0] = 0
-	second, _ := IconSVG(IconShieldCheck)
+	second, err := IconSVG(IconShieldCheck)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if second[0] == 0 {
 		t.Fatal("IconSVG returned shared mutable bytes")
 	}

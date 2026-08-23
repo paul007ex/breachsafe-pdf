@@ -21,6 +21,7 @@ func TestWritePairCreatesExactPrivateOutputs(t *testing.T) {
 		t.Fatal(err)
 	}
 	for path, expected := range map[string]string{pair.PDFPath: "pdf-bytes", pair.ResultPath: "json-bytes"} {
+		// #nosec G304 -- paths are created exclusively under t.TempDir().
 		data, err := os.ReadFile(path)
 		if err != nil {
 			t.Fatal(err)
@@ -52,9 +53,10 @@ func TestWritePairRefusesClobberAndRollsBackCreatedPDF(t *testing.T) {
 	if err == nil || fault.CodeOf(err) != fault.CodeOutputExists {
 		t.Fatalf("expected OUTPUT_EXISTS, got %v", err)
 	}
-	if _, err := os.Stat(pdfPath); !os.IsNotExist(err) {
-		t.Fatalf("new PDF was not rolled back: %v", err)
+	if _, statErr := os.Stat(pdfPath); !os.IsNotExist(statErr) {
+		t.Fatalf("new PDF was not rolled back: %v", statErr)
 	}
+	// #nosec G304 -- resultPath is created exclusively under t.TempDir().
 	data, err := os.ReadFile(resultPath)
 	if err != nil {
 		t.Fatal(err)

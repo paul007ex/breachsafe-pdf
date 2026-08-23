@@ -11,9 +11,11 @@ import (
 	"slices"
 )
 
+// IconName identifies an approved embedded report icon.
 type IconName string
 
 const (
+	// IconShieldCheck is the primary report shield icon.
 	IconShieldCheck IconName = "shield-check"
 	IconScan        IconName = "scan"
 	IconAlert       IconName = "triangle-alert"

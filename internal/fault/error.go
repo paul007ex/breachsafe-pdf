@@ -12,6 +12,7 @@ import (
 type Code string
 
 const (
+	// CodeInvalidInput indicates malformed or rejected caller input.
 	CodeInvalidInput        Code = "INVALID_INPUT"
 	CodeLimitExceeded       Code = "LIMIT_EXCEEDED"
 	CodeCanceled            Code = "CANCELED"

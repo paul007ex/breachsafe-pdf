@@ -31,6 +31,7 @@ func TestRenderFilesWritesExactNoClobberPair(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// #nosec G304 -- pdfPath is created under t.TempDir().
 	pdfBytes, err := os.ReadFile(pdfPath)
 	if err != nil {
 		t.Fatal(err)
@@ -38,21 +39,22 @@ func TestRenderFilesWritesExactNoClobberPair(t *testing.T) {
 	if result.PDF.SHA256 != evidence.DigestBytes(pdfBytes) || result.PDF.Bytes != len(pdfBytes) || result.PDF.Pages != 9 {
 		t.Fatalf("result PDF descriptor = %+v", result.PDF)
 	}
+	// #nosec G304 -- resultPath is created under t.TempDir().
 	resultBytes, err := os.ReadFile(resultPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var persisted evidence.RenderResult
-	if err := json.Unmarshal(resultBytes, &persisted); err != nil {
-		t.Fatal(err)
+	if unmarshalErr := json.Unmarshal(resultBytes, &persisted); unmarshalErr != nil {
+		t.Fatal(unmarshalErr)
 	}
 	if persisted.PDF.SHA256 != result.PDF.SHA256 || len(persisted.Warnings) != 4 || len(persisted.AdmissionRequestSHA256) != 64 {
 		t.Fatalf("persisted result = %+v", persisted)
 	}
 	for _, path := range []string{pdfPath, resultPath} {
-		info, err := os.Stat(path)
-		if err != nil {
-			t.Fatal(err)
+		info, statErr := os.Stat(path)
+		if statErr != nil {
+			t.Fatal(statErr)
 		}
 		if info.Mode().Perm() != 0o600 {
 			t.Fatalf("%s mode = %o", path, info.Mode().Perm())
