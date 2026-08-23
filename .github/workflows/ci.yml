@@ -37,6 +37,8 @@ jobs:
         run: go mod verify
       - name: Staticcheck
         run: staticcheck ./...
+      - name: Golangci-lint
+        run: golangci-lint run
       # Gosec is present in the shared toolchain. Make it a required gate after
       # the inherited prototype's path/error findings are remediated; do not
       # hide those findings with exclusions.

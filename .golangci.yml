@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+version: "2"
+linters:
+  default: standard
+  enable:
+    - errcheck
+    - errorlint
+    - gocritic
+    - gosec
+    - ineffassign
+    - nilerr
+    - revive
+    - unconvert
+    - unused
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    govet:
+      enable-all: true
+  exclusions:
+    generated: lax
