@@ -11,6 +11,8 @@ import (
 // RequestSchemaVersion identifies the accepted render-request contract.
 const RequestSchemaVersion = "breachsafe.report.request.community-single-scan/v1alpha1"
 
+// Request is the caller-supplied admission request: the declared identity, the source
+// declarations, and the expected digests each artifact must match.
 type Request struct {
 	SchemaVersion            string                 `json:"schema_version"`
 	Identity                 evidence.Identity      `json:"identity"`
@@ -20,12 +22,16 @@ type Request struct {
 	AllowCorrelationMismatch bool                   `json:"allow_correlation_mismatch"`
 }
 
+// SourceDeclaration describes one input artifact as the caller declares it, before any
+// of it is read. The declared media type, schema, and digest are checked against the bytes.
 type SourceDeclaration struct {
 	MediaType      string `json:"media_type"`
 	Schema         string `json:"schema"`
 	ExpectedSHA256 string `json:"expected_sha256,omitempty"`
 }
 
+// Result is a successfully admitted request: the decoded model plus the digest actually
+// computed over each artifact's exact bytes.
 type Result struct {
 	Model               evidence.CommunitySingleScan
 	RequestBytesSHA256  string

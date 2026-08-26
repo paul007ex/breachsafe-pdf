@@ -39,6 +39,8 @@ type Renderer struct {
 	generatorCommit  string
 }
 
+// New returns a Renderer that stamps the given generator version and commit into every
+// document it produces.
 func New(generatorVersion, generatorCommit string) *Renderer {
 	return &Renderer{generatorVersion: generatorVersion, generatorCommit: generatorCommit}
 }
@@ -47,6 +49,8 @@ func New(generatorVersion, generatorCommit string) *Renderer {
 // nil receiver so a typed-nil Renderer cannot cross the interface boundary.
 func (renderer *Renderer) Ready() bool { return renderer != nil }
 
+// Render produces the PDF document for the given model. A nil Renderer is an invalid-input
+// fault rather than a panic.
 func (renderer *Renderer) Render(ctx context.Context, model evidence.CommunitySingleScan) (evidence.Document, error) {
 	if renderer == nil {
 		return evidence.Document{}, fault.New(fault.CodeInvalidInput, "pdf.render", "renderer", "renderer is required")

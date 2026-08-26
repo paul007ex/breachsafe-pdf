@@ -21,6 +21,8 @@ import (
 	"github.com/paul007ex/breachsafe-pdf/internal/fault"
 )
 
+// Contract identifiers carried in the emitted document, so a consumer can tell which
+// input shape produced it and which render-result schema it must parse.
 const (
 	// SchemaVersion identifies the Community report model contract.
 	SchemaVersion       = "breachsafe.report.community-single-scan/v1alpha1"
@@ -31,6 +33,8 @@ const (
 // RunStatus describes the producer run lifecycle state.
 type RunStatus string
 
+// RunStatus values. These distinguish a run that produced nothing from one that failed:
+// failure is never collapsed into an empty result.
 const (
 	// RunCompleted indicates a completed producer run.
 	RunCompleted      RunStatus = "completed"
@@ -45,6 +49,7 @@ const (
 // CoverageStatus describes how much requested evidence was assessed.
 type CoverageStatus string
 
+// CoverageStatus values, describing how much of the intended scope the run actually reached.
 const (
 	// CoverageComplete indicates all requested evidence was assessed.
 	CoverageComplete    CoverageStatus = "complete"
@@ -56,6 +61,8 @@ const (
 // Authority identifies the provenance strength of a report value.
 type Authority string
 
+// Authority values, recording where a claim came from: asserted by the tool, imported
+// from another source, or inferred. Inference is never presented as assertion.
 const (
 	// AuthorityObserved identifies a directly observed value.
 	AuthorityObserved     Authority = "observed"
@@ -69,6 +76,8 @@ const (
 // ValidationStatus describes validation of an input or artifact.
 type ValidationStatus string
 
+// ValidationStatus values. not_run is distinct from invalid, so an unrun check is never
+// read as a passing one.
 const (
 	// ValidationValid indicates successful validation.
 	ValidationValid       ValidationStatus = "valid"
@@ -81,6 +90,7 @@ const (
 // PageSize selects the PDF page geometry.
 type PageSize string
 
+// PageSize values supported by the renderer.
 const (
 	// PageA4 selects ISO A4 paper.
 	PageA4     PageSize = "a4"
@@ -90,6 +100,7 @@ const (
 // ColorMode selects color rendering behavior.
 type ColorMode string
 
+// ColorMode values supported by the renderer.
 const (
 	// ColorFull selects the full-color palette.
 	ColorFull      ColorMode = "color"
@@ -194,8 +205,8 @@ type PostureAxis struct {
 	Derivation string    `json:"derivation,omitempty"`
 }
 
-// EvidenceRef points to supporting bytes in an admitted artifact.
-type EvidenceRef struct {
+// Ref points to supporting bytes in an admitted artifact.
+type Ref struct {
 	ArtifactRef string `json:"artifact_ref"`
 	Pointer     string `json:"pointer"`
 	Description string `json:"description"`
@@ -203,41 +214,41 @@ type EvidenceRef struct {
 
 // Finding records one producer observation projected into the report.
 type Finding struct {
-	ID           string        `json:"id"`
-	Title        string        `json:"title"`
-	Description  string        `json:"description"`
-	Outcome      string        `json:"outcome"`
-	Severity     string        `json:"severity"`
-	Readiness    string        `json:"readiness"`
-	Confidence   string        `json:"confidence"`
-	Authority    Authority     `json:"authority"`
-	SubjectRef   string        `json:"subject_ref"`
-	SourceRefs   []string      `json:"source_refs"`
-	EvidenceRefs []EvidenceRef `json:"evidence_refs"`
-	RuleRef      string        `json:"rule_ref"`
-	ObservedAt   time.Time     `json:"observed_at,omitempty"`
-	Protocol     string        `json:"protocol,omitempty"`
-	Algorithm    string        `json:"algorithm,omitempty"`
+	ID           string    `json:"id"`
+	Title        string    `json:"title"`
+	Description  string    `json:"description"`
+	Outcome      string    `json:"outcome"`
+	Severity     string    `json:"severity"`
+	Readiness    string    `json:"readiness"`
+	Confidence   string    `json:"confidence"`
+	Authority    Authority `json:"authority"`
+	SubjectRef   string    `json:"subject_ref"`
+	SourceRefs   []string  `json:"source_refs"`
+	EvidenceRefs []Ref     `json:"evidence_refs"`
+	RuleRef      string    `json:"rule_ref"`
+	ObservedAt   time.Time `json:"observed_at,omitempty"`
+	Protocol     string    `json:"protocol,omitempty"`
+	Algorithm    string    `json:"algorithm,omitempty"`
 }
 
 // InventoryAsset records one cryptographic inventory item.
 type InventoryAsset struct {
-	ID               string        `json:"id"`
-	Name             string        `json:"name"`
-	AssetType        string        `json:"asset_type"`
-	Primitive        string        `json:"primitive,omitempty"`
-	Protocol         string        `json:"protocol,omitempty"`
-	ProtocolVersion  string        `json:"protocol_version,omitempty"`
-	ParameterSet     string        `json:"parameter_set,omitempty"`
-	KeySize          *int          `json:"key_size,omitempty"`
-	NISTQuantumLevel *int          `json:"nist_quantum_level,omitempty"`
-	Observation      string        `json:"observation"`
-	Readiness        string        `json:"readiness"`
-	Severity         string        `json:"severity,omitempty"`
-	Authority        Authority     `json:"authority"`
-	SubjectRef       string        `json:"subject_ref"`
-	SourceRefs       []string      `json:"source_refs"`
-	EvidenceRefs     []EvidenceRef `json:"evidence_refs"`
+	ID               string    `json:"id"`
+	Name             string    `json:"name"`
+	AssetType        string    `json:"asset_type"`
+	Primitive        string    `json:"primitive,omitempty"`
+	Protocol         string    `json:"protocol,omitempty"`
+	ProtocolVersion  string    `json:"protocol_version,omitempty"`
+	ParameterSet     string    `json:"parameter_set,omitempty"`
+	KeySize          *int      `json:"key_size,omitempty"`
+	NISTQuantumLevel *int      `json:"nist_quantum_level,omitempty"`
+	Observation      string    `json:"observation"`
+	Readiness        string    `json:"readiness"`
+	Severity         string    `json:"severity,omitempty"`
+	Authority        Authority `json:"authority"`
+	SubjectRef       string    `json:"subject_ref"`
+	SourceRefs       []string  `json:"source_refs"`
+	EvidenceRefs     []Ref     `json:"evidence_refs"`
 }
 
 // FindingCollection records displayed and total finding counts.

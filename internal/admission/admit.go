@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
+// Package admission validates and decodes a caller-supplied artifact set before any of it
+// is trusted: declared digests are checked against the exact bytes, and every limit is
+// enforced ahead of decode.
 package admission
 
 import (
@@ -82,11 +85,11 @@ func Admit(ctx context.Context, requestBytes, cbomBytes, scanJSONBytes []byte, l
 	requestDigest := evidence.DigestBytes(requestBytes)
 	cbomDigest := evidence.DigestBytes(cbomBytes)
 	scanDigest := evidence.DigestBytes(scanJSONBytes)
-	if err := compareExpectedDigest("cbom", request.CBOM.ExpectedSHA256, cbomDigest); err != nil {
-		return Result{}, err
+	if digestErr := compareExpectedDigest("cbom", request.CBOM.ExpectedSHA256, cbomDigest); digestErr != nil {
+		return Result{}, digestErr
 	}
-	if err := compareExpectedDigest("scan_json", request.ScanJSON.ExpectedSHA256, scanDigest); err != nil {
-		return Result{}, err
+	if digestErr := compareExpectedDigest("scan_json", request.ScanJSON.ExpectedSHA256, scanDigest); digestErr != nil {
+		return Result{}, digestErr
 	}
 
 	correlation := correlate(scan, cbom, cbomProperties)
@@ -402,15 +405,15 @@ func buildFindings(scan qureddyDocument, cbom cycloneDXDocument) evidence.Findin
 	}
 	cbomRules := cbomRulePointers(cbom)
 	for index, finding := range scan.Findings[:maximum] {
-		refs := []evidence.EvidenceRef{{ArtifactRef: "scan-json", Pointer: fmt.Sprintf("/findings/%d", index), Description: "QuReddy producer finding"}}
+		refs := []evidence.Ref{{ArtifactRef: "scan-json", Pointer: fmt.Sprintf("/findings/%d", index), Description: "QuReddy producer finding"}}
 		for _, evidenceID := range finding.EvidenceIDs {
 			if evidenceIndex, ok := evidenceIndexes[evidenceID]; ok {
-				refs = append(refs, evidence.EvidenceRef{ArtifactRef: "scan-json", Pointer: fmt.Sprintf("/evidence/%d", evidenceIndex), Description: "Supporting producer observation " + evidenceID})
+				refs = append(refs, evidence.Ref{ArtifactRef: "scan-json", Pointer: fmt.Sprintf("/evidence/%d", evidenceIndex), Description: "Supporting producer observation " + evidenceID})
 			}
 		}
 		sources := []string{"scan-json"}
 		if pointer, ok := cbomRules[finding.RuleID]; ok {
-			refs = append(refs, evidence.EvidenceRef{ArtifactRef: "cbom", Pointer: pointer, Description: "Correlated CBOM asset or annotation"})
+			refs = append(refs, evidence.Ref{ArtifactRef: "cbom", Pointer: pointer, Description: "Correlated CBOM asset or annotation"})
 			sources = append(sources, "cbom")
 		}
 		algorithm := firstNonEmpty(pointerValue(finding.Algorithm), pointerValue(finding.NegotiatedGroup), pointerValue(finding.ParameterSetIdentifier))
@@ -455,7 +458,7 @@ func buildInventory(cbom cycloneDXDocument) (evidence.InventoryCollection, error
 			Observation: displayUnknown(properties["qureddy:observation"]), Readiness: displayUnknown(properties["qureddy:readiness"]),
 			Severity: properties["qureddy:severity"], Authority: evidence.AuthorityImported,
 			SubjectRef: "subject-primary", SourceRefs: []string{"cbom"},
-			EvidenceRefs: []evidence.EvidenceRef{{ArtifactRef: "cbom", Pointer: fmt.Sprintf("/components/%d", index), Description: "CycloneDX cryptographic asset"}},
+			EvidenceRefs: []evidence.Ref{{ArtifactRef: "cbom", Pointer: fmt.Sprintf("/components/%d", index), Description: "CycloneDX cryptographic asset"}},
 		}
 		if algorithm := component.CryptoProperties.AlgorithmProperties; algorithm != nil {
 			asset.Primitive = algorithm.Primitive

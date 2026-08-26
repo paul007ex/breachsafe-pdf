@@ -24,6 +24,8 @@ import (
 
 const maxPDFBytes = 100 << 20
 
+// FileRequest names the on-disk inputs and outputs for a render, so the caller does not
+// have to read them itself.
 type FileRequest struct {
 	RequestPath  string
 	CBOMPath     string
@@ -32,11 +34,14 @@ type FileRequest struct {
 	ResultPath   string
 }
 
+// Build carries the generator identity stamped into the emitted document.
 type Build struct {
 	GeneratorVersion string
 	GeneratorCommit  string
 }
 
+// RenderFiles renders using the default qureddy input adapter and community report
+// profile. Use RenderFilesProfile to supply your own.
 func RenderFiles(ctx context.Context, request FileRequest, renderer evidence.Renderer, limits admission.Limits, build Build) (evidence.RenderResult, error) {
 	return RenderFilesProfile(ctx, request, renderer, limits, build, qureddy.Adapter{}, community.Profile{})
 }
@@ -81,6 +86,7 @@ func RenderFilesProfile(ctx context.Context, request FileRequest, renderer evide
 	return renderWithProfiles(ctx, admitted.Result, request.PDFPath, request.ResultPath, renderer, limits.Model, build, admitted.Contract, admitted.ID, admitted.Version, profile.ID(), profile.Version(), profile.View())
 }
 
+// Render renders an already-admitted result to the given PDF and RenderResult paths.
 func Render(ctx context.Context, admitted admission.Result, pdfPath, resultPath string, renderer evidence.Renderer, limits evidence.Limits, build Build) (evidence.RenderResult, error) {
 	return renderWithProfiles(ctx, admitted, pdfPath, resultPath, renderer, limits, build, evidence.InputContract, "", "", "", "", "community_single_scan")
 }

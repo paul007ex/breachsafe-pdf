@@ -14,16 +14,23 @@ import (
 	"github.com/paul007ex/breachsafe-pdf/internal/input"
 )
 
+// Identity of this input adapter, carried in the emitted document.
 const (
 	AdapterID      = "qureddy-single-scan"
 	AdapterVersion = "v1alpha1"
 )
 
+// Adapter admits a QuReddy single-scan artifact set as report input.
 type Adapter struct{}
 
-func (Adapter) ID() string      { return AdapterID }
+// ID returns the adapter identifier.
+func (Adapter) ID() string { return AdapterID }
+
+// Version returns the adapter contract version.
 func (Adapter) Version() string { return AdapterVersion }
 
+// Admit validates the supplied artifacts against limits and decodes them into an
+// input.Admission. It returns a fault rather than a partial result on any failure.
 func (Adapter) Admit(ctx context.Context, in input.Input, limits admission.Limits) (input.Admission, error) {
 	cbom, ok := in.Artifacts["cbom"]
 	if !ok {

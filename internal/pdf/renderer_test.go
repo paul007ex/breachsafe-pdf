@@ -97,6 +97,7 @@ func TestLetterGrayscaleProfileRendersAsLetterAndGray(t *testing.T) {
 	if err != nil {
 		t.Fatalf("pdftocairo: %v: %s", err, output)
 	}
+	// #nosec G304 -- prefix is a path this test built under t.TempDir().
 	file, err := os.Open(prefix + ".png")
 	if err != nil {
 		t.Fatal(err)
@@ -285,6 +286,7 @@ func admittedModel(t testing.TB) evidence.CommunitySingleScan {
 
 func readFile(t testing.TB, path string) []byte {
 	t.Helper()
+	// #nosec G304 -- path is a test fixture or a t.TempDir() path chosen by the caller.
 	data, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
