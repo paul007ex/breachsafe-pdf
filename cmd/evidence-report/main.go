@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
+// Command evidence-report renders a BreachSAFE evidence report from a scan artifact set.
 package main
 
 import (

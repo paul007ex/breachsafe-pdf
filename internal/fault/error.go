@@ -11,6 +11,8 @@ import (
 // Code is a stable error category suitable for CLI and API callers.
 type Code string
 
+// Fault codes. These are part of the CLI contract: callers switch on them, so a code
+// is never renamed or reused for a different condition.
 const (
 	// CodeInvalidInput indicates malformed or rejected caller input.
 	CodeInvalidInput        Code = "INVALID_INPUT"

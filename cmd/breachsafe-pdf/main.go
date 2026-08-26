@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
 
+// Command breachsafe-pdf renders a BreachSAFE evidence PDF from a scan artifact set.
 package main
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -63,7 +65,12 @@ func run(args []string) int {
 			renderUsage()
 			return 0
 		}
-		return render(args[1:], newRegistries())
+		regs, err := newRegistries()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "breachsafe-pdf: %v\n", err)
+			return 1
+		}
+		return render(args[1:], regs)
 	}
 	if len(args) == 1 && args[0] == "profile" {
 		profileUsage()
@@ -78,14 +85,18 @@ func run(args []string) int {
 		return 0
 	}
 
-	registries := newRegistries()
+	regs, err := newRegistries()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "breachsafe-pdf: %v\n", err)
+		return 1
+	}
 	switch args[1] {
 	case "list":
 		if len(args) > 2 && wantsHelp(args[2]) {
 			profileUsage()
 			return 0
 		}
-		for _, id := range registries.reports.IDs() {
+		for _, id := range regs.reports.IDs() {
 			fmt.Println(id)
 		}
 		return 0
@@ -98,7 +109,7 @@ func run(args []string) int {
 			profileUsage()
 			return 2
 		}
-		profile, err := registries.reports.Resolve(args[2])
+		profile, err := regs.reports.Resolve(args[2])
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 2
@@ -110,20 +121,26 @@ func run(args []string) int {
 			renderUsage()
 			return 0
 		}
-		return render(args[2:], registries)
+		return render(args[2:], regs)
 	default:
 		profileUsage()
 		return 2
 	}
 }
 
-func newRegistries() registries {
-	inputs, _ := input.NewRegistry(qureddy.Adapter{})
-	reports, _ := report.NewRegistry(community.Profile{})
-	return registries{inputs: inputs, reports: reports}
+func newRegistries() (registries, error) {
+	inputs, err := input.NewRegistry(qureddy.Adapter{})
+	if err != nil {
+		return registries{}, fmt.Errorf("build input registry: %w", err)
+	}
+	reports, err := report.NewRegistry(community.Profile{})
+	if err != nil {
+		return registries{}, fmt.Errorf("build report registry: %w", err)
+	}
+	return registries{inputs: inputs, reports: reports}, nil
 }
 
-func render(args []string, registries registries) int {
+func render(args []string, regs registries) int {
 	flags := flag.NewFlagSet("breachsafe-pdf render", flag.ContinueOnError)
 	flags.SetOutput(os.Stderr)
 	flags.Usage = renderUsage
@@ -136,7 +153,7 @@ func render(args []string, registries registries) int {
 	verbose := flags.Bool("verbose", false, "enable informational diagnostics on stderr")
 	logFormat := flags.String("log-format", "text", "diagnostic format: text or json")
 	if err := flags.Parse(args); err != nil {
-		if err == flag.ErrHelp {
+		if errors.Is(err, flag.ErrHelp) {
 			return 0
 		}
 		return 2
@@ -150,12 +167,12 @@ func render(args []string, registries registries) int {
 		fmt.Fprintln(os.Stderr, err)
 		return 2
 	}
-	profile, err := registries.reports.Resolve(*profileID)
+	profile, err := regs.reports.Resolve(*profileID)
 	if err != nil {
 		logger.Error("profile resolution failed", "profile", *profileID, "error", err)
 		return 2
 	}
-	adapter, err := registries.inputs.Resolve(profile.InputAdapterID())
+	adapter, err := regs.inputs.Resolve(profile.InputAdapterID())
 	if err != nil {
 		logger.Error("input adapter resolution failed", "profile", profile.ID(), "error", err)
 		return 2

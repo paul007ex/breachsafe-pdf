@@ -13,6 +13,8 @@ import (
 	"github.com/paul007ex/breachsafe-pdf/internal/fault"
 )
 
+// Limits bounds what admission will read and decode. Every limit is enforced before
+// the bytes are parsed, so a hostile artifact cannot exhaust memory during decode.
 type Limits struct {
 	MaxRequestBytes  int
 	MaxCBOMBytes     int
@@ -25,6 +27,7 @@ type Limits struct {
 	Model            evidence.Limits
 }
 
+// DefaultLimits returns the limits admission applies when a caller supplies none.
 func DefaultLimits() Limits {
 	return Limits{
 		MaxRequestBytes:  64 << 10,

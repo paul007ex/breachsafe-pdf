@@ -14,6 +14,7 @@ import (
 // IconName identifies an approved embedded report icon.
 type IconName string
 
+// Icon names embedded in the report. Each maps to an asset shipped with the binary.
 const (
 	// IconShieldCheck is the primary report shield icon.
 	IconShieldCheck IconName = "shield-check"
