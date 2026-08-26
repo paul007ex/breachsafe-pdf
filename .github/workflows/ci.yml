@@ -36,6 +36,14 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
+      # actions/checkout adds safe.directory under a TEMPORARY HOME and then reverts it,
+      # so nothing persists for later steps. The container's HOME is /tmp, git then
+      # reports dubious ownership on the workspace and exits 128, and `go build` refuses
+      # to stamp VCS: "error obtaining VCS status: exit status 128". Every compiling step
+      # after checkout fails, staticcheck first.
+      - name: Mark the workspace safe for git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Toolchain doctor
         run: golden-go-doctor
       - name: Format check
