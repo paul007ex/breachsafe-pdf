@@ -54,6 +54,98 @@ func TestAdmitAcceptsMatchingExpectedDigests(t *testing.T) {
 	}
 }
 
+func TestAdmitAcceptsCapturedIKEArtifacts(t *testing.T) {
+	cbom, err := os.ReadFile("testdata/ike.cbom.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	scan, err := os.ReadFile("testdata/ike.scan.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := Admit(context.Background(), requestBytes(t, evidence.DigestBytes(cbom), evidence.DigestBytes(scan), false), cbom, scan, DefaultLimits())
+	if err != nil {
+		t.Fatalf("Admit() error = %v", err)
+	}
+	if result.Model.Subject.CanonicalAddress != "ike://127.0.0.1:500" {
+		t.Fatalf("subject address = %q, want IKE locator", result.Model.Subject.CanonicalAddress)
+	}
+	if result.Model.Correlation.State != "matched" {
+		t.Fatalf("correlation = %q, want matched", result.Model.Correlation.State)
+	}
+	if result.Model.Findings.TotalCount != 6 || result.Model.Inventory.TotalCount != 13 {
+		t.Fatalf("finding/inventory counts = %d/%d, want 6/13", result.Model.Findings.TotalCount, result.Model.Inventory.TotalCount)
+	}
+}
+
+func TestAdmitValidatesIKEObservationStatuses(t *testing.T) {
+	cbom, err := os.ReadFile("testdata/ike.cbom.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	scan, err := os.ReadFile("testdata/ike.scan.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range []struct {
+		status           string
+		allowed          bool
+		runStatus        evidence.RunStatus
+		coverageStatus   evidence.CoverageStatus
+		completedTargets int
+	}{
+		{status: "no_response", allowed: true, runStatus: evidence.RunPartial, coverageStatus: evidence.CoveragePartial},
+		{status: "rejected", allowed: true, runStatus: evidence.RunCompleted, coverageStatus: evidence.CoverageComplete, completedTargets: 1},
+		{status: "unknown", allowed: false},
+	} {
+		t.Run(tc.status, func(t *testing.T) {
+			testScan := []byte(strings.Replace(string(scan), `"status": "completed"`, `"status": "`+tc.status+`"`, 1))
+			testCBOM := []byte(strings.Replace(string(cbom), `"value": "completed"`, `"value": "`+tc.status+`"`, 1))
+			result, err := Admit(context.Background(), requestBytes(t, "", "", false), testCBOM, testScan, DefaultLimits())
+			if tc.allowed && err != nil {
+				t.Fatalf("Admit() error = %v", err)
+			}
+			if !tc.allowed {
+				assertCode(t, err, fault.CodeInvalidInput)
+				return
+			}
+			if result.Model.Run.Status != tc.runStatus || result.Model.Coverage.Status != tc.coverageStatus || result.Model.Coverage.Completed != tc.completedTargets {
+				t.Fatalf("run/coverage = %q/%q/%d, want %q/%q/%d", result.Model.Run.Status, result.Model.Coverage.Status, result.Model.Coverage.Completed, tc.runStatus, tc.coverageStatus, tc.completedTargets)
+			}
+			producerState := ""
+			for _, tool := range result.Model.Tools {
+				if tool.ID == "tool-qureddy" {
+					producerState = tool.State
+				}
+			}
+			if producerState != "completed" {
+				t.Fatalf("producer state = %q, want completed", producerState)
+			}
+			for _, record := range result.Model.Errors {
+				if record.ID == "scan-status" {
+					t.Fatalf("non-failure IKE status emitted scan error: %+v", record)
+				}
+			}
+		})
+	}
+}
+
+func TestAdmitRejectsUnknownScannerInScanJSON(t *testing.T) {
+	cbom, scan := sourceBytes(t)
+	scan = []byte(strings.Replace(string(scan), `"scanner_name":"tls"`, `"scanner_name":"unknown"`, 1))
+	_, err := Admit(context.Background(), requestBytes(t, "", "", false), cbom, scan, DefaultLimits())
+	assertCode(t, err, fault.CodeInvalidInput)
+}
+
+func TestAdmitRejectsUnknownScannerInCBOM(t *testing.T) {
+	cbom, scan := sourceBytes(t)
+	cbom = []byte(strings.Replace(string(cbom), `"name":"qureddy:scan.scanner_name","value":"tls"`, `"name":"qureddy:scan.scanner_name","value":"unknown"`, 1))
+	_, err := Admit(context.Background(), requestBytes(t, "", "", false), cbom, scan, DefaultLimits())
+	assertCode(t, err, fault.CodeInvalidInput)
+}
+
 func TestAdmitRejectsDigestMismatch(t *testing.T) {
 	cbom, scan := sourceBytes(t)
 	request := requestBytes(t, strings.Repeat("0", 64), evidence.DigestBytes(scan), false)
