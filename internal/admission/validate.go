@@ -97,10 +97,11 @@ func validateQuReddy(ctx context.Context, scan qureddyDocument, limits Limits) e
 	if scan.Scan.ScanID == "" || scan.Scan.StartedAt.IsZero() || scan.Scan.CompletedAt.IsZero() || scan.Scan.CompletedAt.Before(scan.Scan.StartedAt) {
 		return inputInvalid("scan", "scan identity and ordered timestamps are required")
 	}
-	if scan.Scan.ScannerName != "tls" && scan.Scan.ScannerName != "ssh" {
-		return inputInvalid("scan.scanner_name", "must be tls or ssh")
+	if !isSupportedScanner(scan.Scan.ScannerName) {
+		return inputInvalid("scan.scanner_name", "must be tls, ssh, or ike")
 	}
-	if scan.Scan.Status != "completed" {
+	failedScan := !isNonFailureScanStatus(scan.Scan.ScannerName, scan.Scan.Status)
+	if failedScan {
 		if _, ok := failureValues[scan.Scan.Status]; !ok {
 			return inputInvalid("scan.status", "unsupported failure category")
 		}
@@ -113,7 +114,7 @@ func validateQuReddy(ctx context.Context, scan qureddyDocument, limits Limits) e
 	}
 	parsed, err := url.Parse(scan.Target.Locator)
 	if err != nil || parsed.Scheme != scan.Target.Scheme || parsed.Host == "" {
-		return inputInvalid("target.locator", "must be a canonical tls:// or ssh:// locator")
+		return inputInvalid("target.locator", "must use the scanner's canonical locator scheme")
 	}
 	if scan.Summary.Target != scan.Target.Locator || scan.Summary.FindingCount != len(scan.Findings) || scan.Summary.FindingCount < 0 {
 		return inputInvalid("summary", "target and finding count must match the document")
@@ -130,7 +131,7 @@ func validateQuReddy(ctx context.Context, scan qureddyDocument, limits Limits) e
 		if _, ok := failureValues[*scan.Summary.FailureCategory]; !ok || scan.Scan.Status != *scan.Summary.FailureCategory {
 			return inputInvalid("summary.failure_category", "must be a supported category equal to scan.status")
 		}
-	} else if scan.Scan.Status != "completed" {
+	} else if failedScan {
 		return inputInvalid("summary.failure_category", "required for a failed scan")
 	}
 	if err := maximum("assets", len(scan.Assets), limits.MaxAssets); err != nil {
@@ -235,13 +236,13 @@ func validateCycloneDX(ctx context.Context, cbom cycloneDXDocument, limits Limit
 			return nil, inputInvalid("metadata.properties", "missing "+required)
 		}
 	}
-	if properties["qureddy:scan.scanner_name"] != "tls" && properties["qureddy:scan.scanner_name"] != "ssh" {
+	if !isSupportedScanner(properties["qureddy:scan.scanner_name"]) {
 		return nil, inputInvalid("metadata.properties", "unsupported scanner name")
 	}
 	if _, ok := readinessValues[properties["qureddy:scan.readiness"]]; !ok {
 		return nil, inputInvalid("metadata.properties", "unsupported readiness")
 	}
-	if properties["qureddy:scan.status"] != "completed" {
+	if !isNonFailureScanStatus(properties["qureddy:scan.scanner_name"], properties["qureddy:scan.status"]) {
 		if _, ok := failureValues[properties["qureddy:scan.status"]]; !ok {
 			return nil, inputInvalid("metadata.properties", "unsupported scan status")
 		}
@@ -324,6 +325,23 @@ func maximum(field string, actual, limit int) error {
 
 func inputInvalid(field, detail string) error {
 	return fault.New(fault.CodeInvalidInput, "admission.validate", field, detail)
+}
+
+func isSupportedScanner(value string) bool {
+	switch value {
+	case "tls", "ssh", "ike":
+		return true
+	default:
+		return false
+	}
+}
+
+func isNonFailureScanStatus(scanner, status string) bool {
+	return isCompletedObservationStatus(scanner, status) || (scanner == "ike" && status == "no_response")
+}
+
+func isCompletedObservationStatus(scanner, status string) bool {
+	return status == "completed" || (scanner == "ike" && status == "rejected")
 }
 
 func stringSet(values ...string) map[string]struct{} {

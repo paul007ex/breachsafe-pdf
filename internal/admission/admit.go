@@ -252,7 +252,7 @@ func buildModel(request Request, scan qureddyDocument, cbom cycloneDXDocument, c
 	if correlation.State != "matched" {
 		limitations = append(limitations, evidence.Limitation{ID: "source-correlation-" + correlation.State, Severity: "high", Description: correlation.Basis, SourceRefs: []string{"cbom", "scan-json"}})
 	}
-	if scan.Scan.Status != "completed" {
+	if !isNonFailureScanStatus(scan.Scan.ScannerName, scan.Scan.Status) {
 		limitations = append(limitations, evidence.Limitation{ID: "scan-not-completed", Severity: "high", Description: "The producer run did not complete: " + scan.Scan.Status + ". Missing evidence remains UNKNOWN.", SourceRefs: []string{"scan-json"}})
 	}
 	if findings.OmittedCount > 0 {
@@ -263,7 +263,7 @@ func buildModel(request Request, scan qureddyDocument, cbom cycloneDXDocument, c
 	}
 
 	unresolved := []string{"What additional systems, ports, protocols, and observation windows exist outside this single declared target and run?"}
-	if scan.Summary.Readiness == "unknown" || scan.Scan.Status != "completed" {
+	if scan.Summary.Readiness == "unknown" || !isCompletedObservationStatus(scan.Scan.ScannerName, scan.Scan.Status) {
 		unresolved = append(unresolved, "What collection capability or evidence is required to resolve the producer's UNKNOWN readiness state?")
 	}
 
@@ -300,7 +300,7 @@ func buildModel(request Request, scan qureddyDocument, cbom cycloneDXDocument, c
 func buildTools(scan qureddyDocument, cbom cycloneDXDocument) []evidence.Tool {
 	tools := []evidence.Tool{{
 		ID: "tool-qureddy", Name: "QuReddy", Version: scan.Scan.ScannerVersion, Role: "producer/scanner",
-		Capabilities: []string{scan.Scan.ScannerName + " single-target scan", "qureddy.scan.v1", "CycloneDX 1.7 CBOM"}, State: toolState(scan.Scan.Status),
+		Capabilities: []string{scan.Scan.ScannerName + " single-target scan", "qureddy.scan.v1", "CycloneDX 1.7 CBOM"}, State: toolState(scan.Scan.ScannerName, scan.Scan.Status),
 	}}
 	seen := map[string]struct{}{"qureddy": {}}
 	for _, component := range cbom.Metadata.Tools.Components {
@@ -339,19 +339,19 @@ func buildCoverage(scan qureddyDocument) evidence.Coverage {
 	coverage := evidence.Coverage{
 		Status: evidence.CoveragePartial, Requested: 1, Attempted: 0, Completed: 0,
 		Authority: evidence.AuthorityInferred, SourceRefs: []string{"scan-json"},
-		Derivation: "One explicitly requested target; attempted from producer total_attempts; completed only when scan.status=completed.",
+		Derivation: "One explicitly requested target; attempted from producer total_attempts; completed when the producer reports a terminal observation.",
 	}
 	if scan.Scan.TotalAttempts > 0 {
 		coverage.Attempted = 1
 	}
-	if scan.Scan.Status == "completed" {
+	if isCompletedObservationStatus(scan.Scan.ScannerName, scan.Scan.Status) {
 		coverage.Status = evidence.CoverageComplete
 		coverage.Completed = 1
 	} else if scan.Scan.TotalAttempts == 0 {
 		coverage.Status = evidence.CoverageUnavailable
 	}
 	if coverage.Completed == 0 {
-		coverage.NotAssessed = []string{scan.Target.Locator + " did not produce a completed scan"}
+		coverage.NotAssessed = []string{scan.Target.Locator + " did not produce a completed observation"}
 	}
 	return coverage
 }
@@ -482,7 +482,7 @@ func buildInventory(cbom cycloneDXDocument) (evidence.InventoryCollection, error
 
 func buildErrors(scan qureddyDocument) []evidence.ErrorRecord {
 	errors := make([]evidence.ErrorRecord, 0)
-	if scan.Scan.Status != "completed" {
+	if !isNonFailureScanStatus(scan.Scan.ScannerName, scan.Scan.Status) {
 		errors = append(errors, evidence.ErrorRecord{ID: "scan-status", Stage: "collection", SourceRef: "scan-json", Code: scan.Scan.Status, Description: "Producer reported a non-completed scan state.", SubjectRef: "subject-primary"})
 	}
 	for index, dependency := range scan.Dependencies {
@@ -499,11 +499,14 @@ func buildErrors(scan qureddyDocument) []evidence.ErrorRecord {
 }
 
 func mapRunStatus(scan qureddyDocument) evidence.RunStatus {
-	if scan.Scan.Status == "completed" {
+	if isCompletedObservationStatus(scan.Scan.ScannerName, scan.Scan.Status) {
 		if len(scan.Findings) == 0 {
 			return evidence.RunCompletedEmpty
 		}
 		return evidence.RunCompleted
+	}
+	if isNonFailureScanStatus(scan.Scan.ScannerName, scan.Scan.Status) {
+		return evidence.RunPartial
 	}
 	if strings.HasPrefix(scan.Scan.Status, "local_") {
 		return evidence.RunUnavailable
@@ -518,8 +521,8 @@ func subjectDisplayName(scan qureddyDocument) string {
 	return scan.Target.Host + ":" + strconv.Itoa(scan.Target.Port)
 }
 
-func toolState(scanStatus string) string {
-	if scanStatus == "completed" {
+func toolState(scanner, scanStatus string) string {
+	if isNonFailureScanStatus(scanner, scanStatus) {
 		return "completed"
 	}
 	if strings.HasPrefix(scanStatus, "local_") {
