@@ -21,6 +21,7 @@ import (
 	"github.com/paul007ex/breachsafe-pdf/internal/pdf"
 	"github.com/paul007ex/breachsafe-pdf/internal/report"
 	"github.com/paul007ex/breachsafe-pdf/internal/report/profiles/community"
+	"github.com/paul007ex/breachsafe-pdf/internal/report/profiles/executive"
 )
 
 var version = "0.1.0"
@@ -133,7 +134,7 @@ func newRegistries() (registries, error) {
 	if err != nil {
 		return registries{}, fmt.Errorf("build input registry: %w", err)
 	}
-	reports, err := report.NewRegistry(community.Profile{})
+	reports, err := report.NewRegistry(community.Profile{}, executive.Profile{})
 	if err != nil {
 		return registries{}, fmt.Errorf("build report registry: %w", err)
 	}
@@ -179,10 +180,14 @@ func render(args []string, regs registries) int {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	renderer := pdf.New(version, "")
+	if profile.View() == executive.View {
+		renderer = pdf.NewExecutive(version, "")
+	}
 	result, err := evidenceapp.RenderFilesProfile(ctx, evidenceapp.FileRequest{
 		RequestPath: *requestPath, CBOMPath: *cbomPath, ScanJSONPath: *scanPath,
 		PDFPath: *pdfPath, ResultPath: *resultPath,
-	}, pdf.New(version, ""), admission.DefaultLimits(), evidenceapp.Build{GeneratorVersion: version}, adapter, profile)
+	}, renderer, admission.DefaultLimits(), evidenceapp.Build{GeneratorVersion: version}, adapter, profile)
 	if err != nil {
 		logger.Error("render failed", "profile", profile.ID(), "error", err)
 		return 1

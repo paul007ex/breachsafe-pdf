@@ -37,12 +37,19 @@ const (
 type Renderer struct {
 	generatorVersion string
 	generatorCommit  string
+	executive        bool
 }
 
 // New returns a Renderer that stamps the given generator version and commit into every
 // document it produces.
 func New(generatorVersion, generatorCommit string) *Renderer {
 	return &Renderer{generatorVersion: generatorVersion, generatorCommit: generatorCommit}
+}
+
+// NewExecutive returns a Renderer that emits the one-page Harvest Now, Decrypt Later
+// risk exposure summary instead of the full evidence report, from the same admitted model.
+func NewExecutive(generatorVersion, generatorCommit string) *Renderer {
+	return &Renderer{generatorVersion: generatorVersion, generatorCommit: generatorCommit, executive: true}
 }
 
 // Ready reports whether the receiver can render. It is deliberately safe on a
@@ -102,7 +109,11 @@ func (renderer *Renderer) Render(ctx context.Context, model evidence.CommunitySi
 
 	layout := newLayout(ctx, pdf, model, modelDigest, renderer, icons)
 	layout.registerFurniture()
-	if err := layout.compose(); err != nil {
+	compose := layout.compose
+	if renderer.executive {
+		compose = layout.composeExecutive
+	}
+	if err := compose(); err != nil {
 		return evidence.Document{}, err
 	}
 	if err := pdf.Error(); err != nil {
